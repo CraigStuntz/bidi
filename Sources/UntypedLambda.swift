@@ -38,13 +38,6 @@ struct VClosure: Value {
   }
 }
 
-func mapToResult(maybeVal: Value?, orElse: Message) -> Result<Value, Message> {
-  guard let value = maybeVal else {
-    return .failure(orElse)
-  }
-  return .success(value)
-}
-
 indirect enum Expr {
   case variable(Name)
   case lambda(Name, Expr)
@@ -53,7 +46,10 @@ indirect enum Expr {
   func eval(env: Env) -> Result<Value, Message> {
     switch self {
     case let .variable(name):
-      return mapToResult(maybeVal: env[name], orElse: .notFound(name))
+      guard let value = env[name] else {
+        return .failure(.notFound(name))
+      }
+      return .success(value)
     case let .lambda(name, body):
       return .success(VClosure(env: env, argName: name, body: body))
     // "The names rator and rand are short for 'operator' and 'operand.'
@@ -86,13 +82,13 @@ func addDef(env: Env, name: Name, expr: Expr) -> Result<Env, Message> {
 func addDefs(env: Env, defs: Defs) -> Result<Env, Message> {
   return defs.reduce(
     .success(env),
-    { (accum, def) in
-      accum.flatMap { env in return addDef(env: env, name: def.key, expr: def.value) }
+    { (result, def) in
+      result.flatMap { env in addDef(env: env, name: def.key, expr: def.value) }
     }
   )
 }
 
 func runProgram(defs: Defs, expr: Expr) -> Result<Value, Message> {
   return addDefs(env: Env(values: [:]), defs: defs)
-    .flatMap { (env: Env) in expr.eval(env: env) }
+    .flatMap { env in expr.eval(env: env) }
 }
