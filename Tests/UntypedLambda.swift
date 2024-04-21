@@ -33,10 +33,10 @@ let churchDefs: Defs = [
 ]
 
 func toChurch(_ n: Int) -> Expr {
-  guard n <= 0 else {
-    return .application(.variable("add1"), (toChurch(n - 1)))
+  if n <= 0 {
+    return .variable("zero")
   }
-  return .variable("zero")
+  return .application(.variable("add1"), (toChurch(n - 1)))  
 }
 
 func test() -> Result<Value, Message> {
