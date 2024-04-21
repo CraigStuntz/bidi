@@ -1,0 +1,28 @@
+{
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:bidi}",
+            "name": "Debug bidi",
+            "program": "${workspaceFolder:bidi}/.build/debug/bidi",
+            "preLaunchTask": "swift: Build Debug bidi"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:bidi}",
+            "name": "Release bidi",
+            "program": "${workspaceFolder:bidi}/.build/release/bidi",
+            "preLaunchTask": "swift: Build Release bidi"
+        }
+    ]
+}
