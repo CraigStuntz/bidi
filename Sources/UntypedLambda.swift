@@ -10,7 +10,6 @@ let tab = padding(chars: indent)
 
 struct Env {
   let values: [Name: Value]
-  let isEmpty: Bool
 
   subscript(name: Name) -> Value? {
     return self.values[name]
@@ -20,11 +19,6 @@ struct Env {
     var result = values
     result[name] = value
     return Env(values: result)
-  }
-
-  init(values: [Name: Value]) {
-    self.values = values
-    self.isEmpty = self.values.isEmpty
   }
 
   func prettyPrint(offsetChars: Int) -> [String] {

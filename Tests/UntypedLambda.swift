@@ -50,7 +50,8 @@ class EnvTests: XCTestCase {
     let env = Env(values: [
       "foo": VClosure(env: Env(values: [:]), argName: "bar", body: .variable("x"))
     ])
-    let newEnv = env.extend(name: "baz", value: VClosure(env: Env(values: [:]), argName: "qux", body: .variable("boo")))
+    let newEnv = env.extend(
+      name: "baz", value: VClosure(env: Env(values: [:]), argName: "qux", body: .variable("boo")))
 
     assert(env["foo"] != nil)
     assert(env["baz"] == nil)
