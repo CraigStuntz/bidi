@@ -36,13 +36,27 @@ func toChurch(_ n: Int) -> Expr {
   if n <= 0 {
     return .variable("zero")
   }
-  return .application(.variable("add1"), (toChurch(n - 1)))  
+  return .application(.variable("add1"), (toChurch(n - 1)))
 }
 
 func test() -> Result<Value, Message> {
   return runProgram(
     defs: churchDefs,
     expr: .application(.application(.variable("+"), toChurch(2)), toChurch(3)))
+}
+
+class EnvTests: XCTestCase {
+  func testEnvIsImmutable() throws {
+    let env = Env(values: [
+      "foo": VClosure(env: Env(values: [:]), argName: "bar", body: .variable("x"))
+    ])
+    let newEnv = env.extend(name: "baz", value: VClosure(env: Env(values: [:]), argName: "qux", body: .variable("boo")))
+
+    assert(env["foo"] != nil)
+    assert(env["baz"] == nil)
+    assert(newEnv["foo"] != nil)
+    assert(newEnv["foo"] != nil)
+  }
 }
 
 class UntypedLambdaTests: XCTestCase {
