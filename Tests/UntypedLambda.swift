@@ -42,13 +42,13 @@ func toChurch(_ n: Int) -> Expr {
 func test() -> Result<Value, Message> {
   return runProgram(
     defs: churchDefs,
-    expr: .application(.application(.variable("+"), toChurch(2)), toChurch(3)))
+    body: .application(.application(.variable("+"), toChurch(2)), toChurch(3)))
 }
 
 func testFail() -> Result<Value, Message> {
   return runProgram(
     defs: [:],
-    expr: .application(.application(.variable("+"), toChurch(2)), toChurch(3)))
+    body: .application(.application(.variable("+"), toChurch(2)), toChurch(3)))
 }
 
 class EnvTests: XCTestCase {

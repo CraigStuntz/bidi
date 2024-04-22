@@ -2,6 +2,17 @@ import Foundation
 
 typealias Name = String
 
+protocol Value: CustomStringConvertible {
+  func apply(argValue: Value) -> Result<Value, Message>
+  func prettyPrint(offsetChars: Int) -> [String]
+}
+
+enum Message: Error {
+  case notFound(Name)
+}
+
+typealias Defs = [Name: Expr]
+
 let indent = 2
 func padding(chars: Int) -> String {
   return "".padding(toLength: chars, withPad: " ", startingAt: 0)
@@ -33,15 +44,6 @@ struct Env {
     }
     return result
   }
-}
-
-enum Message: Error {
-  case notFound(Name)
-}
-
-protocol Value: CustomStringConvertible {
-  func apply(argValue: Value) -> Result<Value, Message>
-  func prettyPrint(offsetChars: Int) -> [String]
 }
 
 struct VClosure: Value {
@@ -125,8 +127,6 @@ indirect enum Expr {
   }
 }
 
-typealias Defs = [Name: Expr]
-
 func addDef(env: Env, name: Name, expr: Expr) -> Result<Env, Message> {
   return
     expr
@@ -137,7 +137,7 @@ func addDef(env: Env, name: Name, expr: Expr) -> Result<Env, Message> {
     }
 }
 
-func addDefs(env: Env, defs: Defs) -> Result<Env, Message> {
+func addDefs(env: Env = Env(values: [:]), defs: Defs) -> Result<Env, Message> {
   return defs.reduce(
     .success(env),
     { (result, def) in
@@ -146,9 +146,9 @@ func addDefs(env: Env, defs: Defs) -> Result<Env, Message> {
   )
 }
 
-func runProgram(defs: Defs, expr: Expr) -> Result<Value, Message> {
-  return addDefs(env: Env(values: [:]), defs: defs)
-    .flatMap { env in expr.eval(env: env) }
+func runProgram(defs: Defs, body: Expr) -> Result<Value, Message> {
+  return addDefs(defs: defs)
+    .flatMap { env in body.eval(env: env) }
 }
 
 func nextName(x: Name) -> Name {
