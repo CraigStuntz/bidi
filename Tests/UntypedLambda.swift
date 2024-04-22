@@ -45,6 +45,12 @@ func test() -> Result<Value, Message> {
     expr: .application(.application(.variable("+"), toChurch(2)), toChurch(3)))
 }
 
+func testFail() -> Result<Value, Message> {
+  return runProgram(
+    defs: [:],
+    expr: .application(.application(.variable("+"), toChurch(2)), toChurch(3)))
+}
+
 class EnvTests: XCTestCase {
   func testEnvIsImmutable() throws {
     let env = Env(values: [
@@ -53,10 +59,10 @@ class EnvTests: XCTestCase {
     let newEnv = env.extend(
       name: "baz", value: VClosure(env: Env(values: [:]), argName: "qux", body: .variable("boo")))
 
-    assert(env["foo"] != nil)
-    assert(env["baz"] == nil)
-    assert(newEnv["foo"] != nil)
-    assert(newEnv["foo"] != nil)
+    XCTAssertNotNil(env["foo"])
+    XCTAssertNil(env["baz"])
+    XCTAssertNotNil(newEnv["foo"])
+    XCTAssertNotNil(newEnv["foo"])
   }
 }
 
@@ -65,5 +71,18 @@ class UntypedLambdaTests: XCTestCase {
     let result = test()
     let actual = try result.get()
     print(actual)
+  }
+
+  func test2plus3WithBug() throws {
+    let result = testFail()
+    switch result {
+    case .success:
+      XCTFail()
+    case .failure(let message):
+      switch message {
+      case .notFound(let name):
+        XCTAssertEqual("+", name)
+      }
+    }
   }
 }
