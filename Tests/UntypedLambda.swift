@@ -45,13 +45,13 @@ func toChurch(_ n: Int) -> Expr {
   return .application(.variable("add1"), toChurch(n - 1))
 }
 
-func test() -> Result<Value, Message> {
+func test() -> Result<Expr, Message> {
   return runProgram(
     defs: churchDefs,
     body: .application(.application(.variable("+"), toChurch(2)), toChurch(3)))
 }
 
-func testFail() -> Result<Value, Message> {
+func testFail() -> Result<Expr, Message> {
   return runProgram(
     defs: [],
     body: .application(.application(.variable("+"), toChurch(2)), toChurch(3)))

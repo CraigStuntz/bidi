@@ -6,9 +6,20 @@ enum Message: Error {
   case notFound(Name)
 }
 
-protocol Value: CustomStringConvertible {
-  func apply(argValue: Value) -> Result<Value, Message>
+protocol Show: CustomStringConvertible {
   func prettyPrint(offsetChars: Int) -> [String]
+}
+
+extension Show {
+  var description: String {
+    let result = prettyPrint(offsetChars: indent)
+    return String(result.joined(separator: "\n"))
+  }
+}
+
+protocol Value: Show {
+  func apply(argValue: Value) -> Result<Value, Message>
+  func readBack(used: [String]) -> Result<Expr, Message>
 }
 
 typealias Defs = [(name: Name, expr: Expr)]
@@ -72,9 +83,15 @@ struct VClosure: Value {
     return result
   }
 
-  var description: String {
-    let result = prettyPrint(offsetChars: indent)
-    return String(result.joined(separator: "\n"))
+  func readBack(used: [String]) -> Result<Expr, Message> {
+    let x = freshen(used: used, x: argName)
+    var newUsed = used
+    newUsed.append(x)
+    return self.apply(argValue: VNeutral(neutral: .nvar(x)))
+      .flatMap { bodyVal in
+        bodyVal.readBack(used: newUsed)
+          .flatMap { bodyExpr in .success(.lambda(x, bodyExpr)) }
+      }
   }
 }
 
@@ -114,13 +131,22 @@ struct VNeutral: Value {
     return result
   }
 
-  var description: String {
-    let result = prettyPrint(offsetChars: indent)
-    return String(result.joined(separator: "\n"))
+  func readBack(used: [String]) -> Result<Expr, Message> {
+    switch neutral {
+    case .nvar(let name):
+      return .success(.variable(name))
+    case .napp(let fun, let arg):
+      return VNeutral(neutral: fun)
+        .readBack(used: used)
+        .flatMap { rator in
+          arg.readBack(used: used)
+            .flatMap { rand in .success(.application(rator, rand)) }
+        }
+    }
   }
 }
 
-indirect enum Expr {
+indirect enum Expr: Show {
   case variable(Name)
   case lambda(Name, Expr)
   case application(Expr, Expr)
@@ -146,6 +172,11 @@ indirect enum Expr {
             }
         }
     }
+  }
+
+  func normalize() -> Result<Expr, Message> {
+    return self.eval(env: Env(values: [:]))
+      .flatMap { val in val.readBack(used: []) }
   }
 
   func prettyPrint(offsetChars: Int) -> [String] {
@@ -187,9 +218,12 @@ func addDefs(env: Env = Env(values: [:]), defs: Defs) -> Result<Env, Message> {
   )
 }
 
-func runProgram(defs: Defs, body: Expr) -> Result<Value, Message> {
+func runProgram(defs: Defs, body: Expr) -> Result<Expr, Message> {
   return addDefs(defs: defs)
-    .flatMap { env in body.eval(env: env) }
+    .flatMap { env in
+      body.eval(env: env)
+        .flatMap { val in val.readBack(used: defs.map { def in def.name }) }
+    }
 }
 
 func nextName(x: Name) -> Name {
