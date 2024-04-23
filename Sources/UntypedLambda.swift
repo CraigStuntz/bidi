@@ -76,6 +76,50 @@ struct VClosure: Value {
   }
 }
 
+indirect enum Neutral {
+  case nvar(Name)
+  case napp(Neutral, Value)
+
+  func prettyPrint(offsetChars: Int) -> [String] {
+    var result: [String] = []
+    let leftPad = padding(chars: offsetChars)
+    switch self {
+    case .nvar(let name):
+      result.append("\(leftPad)(NVar \(name))")
+      break
+    case .napp(let neutral, let value):
+      result.append("\(leftPad)(NApp")
+      result.append(contentsOf: neutral.prettyPrint(offsetChars: offsetChars + indent))
+      result.append(contentsOf: value.prettyPrint(offsetChars: offsetChars + indent))
+      result.append("\(leftPad))")
+      break
+    }
+    return result
+  }
+}
+
+struct VNeutral: Value {
+  let neutral: Neutral
+
+  func apply(argValue: Value) -> Result<Value, Message> {
+    return .success(VNeutral(neutral: .napp(neutral, argValue)))
+  }
+
+  func prettyPrint(offsetChars: Int) -> [String] {
+    var result: [String] = []
+    let leftPad = padding(chars: offsetChars)
+    result.append("\(leftPad)(VNeutral")
+    result.append(contentsOf: neutral.prettyPrint(offsetChars: offsetChars + indent))
+    result.append("\(leftPad))")
+    return result
+  }
+
+  var description: String {
+    let result = prettyPrint(offsetChars: indent)
+    return String(result.joined(separator: "\n"))
+  }
+}
+
 indirect enum Expr {
   case variable(Name)
   case lambda(Name, Expr)
