@@ -88,13 +88,11 @@ indirect enum Neutral {
     switch self {
     case .nvar(let name):
       result.append("\(leftPad)(NVar \(name))")
-      break
     case .napp(let neutral, let value):
       result.append("\(leftPad)(NApp")
       result.append(contentsOf: neutral.prettyPrint(offsetChars: offsetChars + indent))
       result.append(contentsOf: value.prettyPrint(offsetChars: offsetChars + indent))
       result.append("\(leftPad))")
-      break
     }
     return result
   }
@@ -156,18 +154,15 @@ indirect enum Expr {
     switch self {
     case .variable(let name):
       result.append("\(leftPad)(Var \(name))")
-      break
     case .lambda(let name, let body):
       result.append("\(leftPad)(Lambda \(name)")
       result.append(contentsOf: body.prettyPrint(offsetChars: offsetChars + indent))
       result.append("\(leftPad))")
-      break
     case .application(let rator, let rand):
       result.append("\(leftPad)(App")
       result.append(contentsOf: rator.prettyPrint(offsetChars: offsetChars + indent))
       result.append(contentsOf: rand.prettyPrint(offsetChars: offsetChars + indent))
       result.append("\(leftPad))")
-      break
     }
     return result
   }
