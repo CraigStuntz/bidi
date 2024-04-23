@@ -83,6 +83,17 @@ struct VClosure: Value {
     return result
   }
 
+  private func nextName(x: Name) -> Name {
+    return x + "'"
+  }
+
+  private func freshen(used: [Name], x: Name) -> Name {
+    if used.contains(x) {
+      return freshen(used: used, x: nextName(x: x))
+    }
+    return x
+  }
+
   func readBack(used: [String]) -> Result<Expr, Message> {
     let x = freshen(used: used, x: argName)
     var newUsed = used
@@ -174,6 +185,7 @@ indirect enum Expr: Show {
     }
   }
 
+  // Unused in David's document?
   func normalize() -> Result<Expr, Message> {
     return self.eval(env: Env(values: [:]))
       .flatMap { val in val.readBack(used: []) }
@@ -224,15 +236,4 @@ func runProgram(defs: Defs, body: Expr) -> Result<Expr, Message> {
       body.eval(env: env)
         .flatMap { val in val.readBack(used: defs.map { def in def.name }) }
     }
-}
-
-func nextName(x: Name) -> Name {
-  return x + "'"
-}
-
-func freshen(used: [Name], x: Name) -> Name {
-  if used.contains(x) {
-    return freshen(used: used, x: nextName(x: x))
-  }
-  return x
 }
