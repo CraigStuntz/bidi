@@ -2,21 +2,23 @@ import Foundation
 
 typealias Name = String
 
+enum Message: Error {
+  case notFound(Name)
+}
+
 protocol Value: CustomStringConvertible {
   func apply(argValue: Value) -> Result<Value, Message>
   func prettyPrint(offsetChars: Int) -> [String]
 }
 
-enum Message: Error {
-  case notFound(Name)
-}
-
 typealias Defs = [(name: Name, expr: Expr)]
 
 let indent = 2
+
 func padding(chars: Int) -> String {
   return "".padding(toLength: chars, withPad: " ", startingAt: 0)
 }
+
 let tab = padding(chars: indent)
 
 struct Env {
