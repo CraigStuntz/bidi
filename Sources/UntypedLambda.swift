@@ -11,7 +11,7 @@ enum Message: Error {
   case notFound(Name)
 }
 
-typealias Defs = [Name: Expr]
+typealias Defs = [(name: Name, expr: Expr)]
 
 let indent = 2
 func padding(chars: Int) -> String {
@@ -141,7 +141,7 @@ func addDefs(env: Env = Env(values: [:]), defs: Defs) -> Result<Env, Message> {
   return defs.reduce(
     .success(env),
     { (result, def) in
-      result.flatMap { env in addDef(env: env, name: def.key, expr: def.value) }
+      result.flatMap { env in addDef(env: env, name: def.name, expr: def.expr) }
     }
   )
 }

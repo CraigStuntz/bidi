@@ -3,40 +3,46 @@ import XCTest
 @testable import bidi
 
 let churchDefs: Defs = [
-  "zero": .lambda("f", .lambda("x", .variable("x"))),
-  "add1": .lambda(
-    "n",
+  ("zero", .lambda("f", .lambda("x", .variable("x")))),
+  (
+    "add1",
     .lambda(
-      "f",
-      .lambda(
-        "x",
-        .application(
-          .variable("f"),
-          .application(
-            .application(
-              .variable("n"),
-              .variable("f")),
-            .variable("x")))))),
-  "+": .lambda(
-    "j",
-    .lambda(
-      "k",
+      "n",
       .lambda(
         "f",
         .lambda(
           "x",
           .application(
-            .application(.variable("j"), .variable("f")),
+            .variable("f"),
             .application(
-              .application(.variable("k"), .variable("f")),
-              .variable("x"))))))),
+              .application(
+                .variable("n"),
+                .variable("f")),
+              .variable("x"))))))
+  ),
+  (
+    "+",
+    .lambda(
+      "j",
+      .lambda(
+        "k",
+        .lambda(
+          "f",
+          .lambda(
+            "x",
+            .application(
+              .application(.variable("j"), .variable("f")),
+              .application(
+                .application(.variable("k"), .variable("f")),
+                .variable("x")))))))
+  ),
 ]
 
 func toChurch(_ n: Int) -> Expr {
   if n <= 0 {
     return .variable("zero")
   }
-  return .application(.variable("add1"), (toChurch(n - 1)))
+  return .application(.variable("add1"), toChurch(n - 1))
 }
 
 func test() -> Result<Value, Message> {
@@ -47,7 +53,7 @@ func test() -> Result<Value, Message> {
 
 func testFail() -> Result<Value, Message> {
   return runProgram(
-    defs: [:],
+    defs: [],
     body: .application(.application(.variable("+"), toChurch(2)), toChurch(3)))
 }
 

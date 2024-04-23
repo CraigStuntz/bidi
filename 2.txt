@@ -1,0 +1,329 @@
+Test Suite 'All tests' started at 2024-04-22 21:23:45.066.
+Test Suite 'bidiPackageTests.xctest' started at 2024-04-22 21:23:45.067.
+Test Suite 'EnvTests' started at 2024-04-22 21:23:45.067.
+Test Case '-[bidiTests.EnvTests testEnvIsImmutable]' started.
+Test Case '-[bidiTests.EnvTests testEnvIsImmutable]' passed (0.001 seconds).
+Test Suite 'EnvTests' passed at 2024-04-22 21:23:45.068.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'UntypedLambdaTests' started at 2024-04-22 21:23:45.068.
+Test Case '-[bidiTests.UntypedLambdaTests test2plus3]' started.
+Test Case '-[bidiTests.UntypedLambdaTests test2plus3]' passed (0.000 seconds).
+Test Case '-[bidiTests.UntypedLambdaTests test2plus3WithBug]' started.
+Test Case '-[bidiTests.UntypedLambdaTests test2plus3WithBug]' passed (0.000 seconds).
+Test Suite 'UntypedLambdaTests' passed at 2024-04-22 21:23:45.068.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'bidiPackageTests.xctest' passed at 2024-04-22 21:23:45.068.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'All tests' passed at 2024-04-22 21:23:45.068.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+extend baz, foo
+Eval:  lambda f body lambda x body variable x
+extend zero
+Eval:  lambda n body lambda f body lambda x body application rator variable f rand application rator application rator variable n rand variable f) rand variable x))
+extend add1, zero
+Eval:  lambda j body lambda k body lambda f body lambda x body application rator application rator variable j rand variable f) rand application rator application rator variable k rand variable f) rand variable x))
+extend +, add1, zero
+Eval:  application rator application rator variable + rand application rator variable add1 rand application rator variable add1 rand variable zero))) rand application rator variable add1 rand application rator variable add1 rand application rator variable add1 rand variable zero))))
+Eval:  application rator variable + rand application rator variable add1 rand application rator variable add1 rand variable zero)))
+Eval:  variable +
+Eval:  application rator variable add1 rand application rator variable add1 rand variable zero))
+Eval:  variable add1
+Eval:  application rator variable add1 rand variable zero)
+Eval:  variable add1
+Eval:  variable zero
+apply env:  zero
+ argValue:  env:  
+extend n, zero
+Eval:  lambda f body lambda x body application rator variable f rand application rator application rator variable n rand variable f) rand variable x))
+apply env:  zero
+ argValue:  env:  n, zero
+extend n, zero
+Eval:  lambda f body lambda x body application rator variable f rand application rator application rator variable n rand variable f) rand variable x))
+apply env:  add1, zero
+ argValue:  env:  n, zero
+extend add1, j, zero
+Eval:  lambda k body lambda f body lambda x body application rator application rator variable j rand variable f) rand application rator application rator variable k rand variable f) rand variable x))
+Eval:  application rator variable add1 rand application rator variable add1 rand application rator variable add1 rand variable zero)))
+Eval:  variable add1
+Eval:  application rator variable add1 rand application rator variable add1 rand variable zero))
+Eval:  variable add1
+Eval:  application rator variable add1 rand variable zero)
+Eval:  variable add1
+Eval:  variable zero
+apply env:  zero
+ argValue:  env:  
+extend n, zero
+Eval:  lambda f body lambda x body application rator variable f rand application rator application rator variable n rand variable f) rand variable x))
+apply env:  zero
+ argValue:  env:  n, zero
+extend n, zero
+Eval:  lambda f body lambda x body application rator variable f rand application rator application rator variable n rand variable f) rand variable x))
+apply env:  zero
+ argValue:  env:  n, zero
+extend n, zero
+Eval:  lambda f body lambda x body application rator variable f rand application rator application rator variable n rand variable f) rand variable x))
+apply env:  add1, j, zero
+ argValue:  env:  n, zero
+extend add1, j, k, zero
+Eval:  lambda f body lambda x body application rator application rator variable j rand variable f) rand application rator application rator variable k rand variable f) rand variable x))
+  (VClosure
+    (env [
+      (add1
+        (VClosure
+          (env [
+            (zero
+              (VClosure
+                (env [
+                ])
+                (argName f)
+                (body
+                  (Lambda x
+                    (Var x)
+                  )
+                )
+              )
+            )
+          ])
+          (argName n)
+          (body
+            (Lambda f
+              (Lambda x
+                (App
+                  (Var f)
+                  (App
+                    (App
+                      (Var n)
+                      (Var f)
+                    )
+                    (Var x)
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+      (j
+        (VClosure
+          (env [
+            (n
+              (VClosure
+                (env [
+                  (n
+                    (VClosure
+                      (env [
+                      ])
+                      (argName f)
+                      (body
+(Lambda x
+                          (Var x)
+                        )
+                      )
+                    )
+                  )
+                  (zero
+                    (VClosure
+                      (env [
+                      ])
+                      (argName f)
+                      (body
+                        (Lambda x
+                          (Var x)
+                        )
+                      )
+                    )
+                  )
+                ])
+                (argName f)
+                (body
+                  (Lambda x
+                    (App
+                      (Var f)
+                      (App
+                        (App
+                          (Var n)
+                          (Var f)
+                        )
+                        (Var x)
+                      )
+                    )
+                  )
+                )
+              )
+            )
+            (zero
+              (VClosure
+                (env [
+                ])
+                (argName f)
+                (body
+                  (Lambda x
+                    (Var x)
+                  )
+                )
+              )
+            )
+          ])
+          (argName f)
+          (body
+            (Lambda x
+              (App
+                (Var f)
+                (App
+                  (App
+                    (Var n)
+                    (Var f)
+                  )
+                  (Var x)
+                )
+              )
+            )
+          )
+        )
+      )
+      (k
+        (VClosure
+          (env [
+            (n
+              (VClosure
+                (env [
+                  (n
+                    (VClosure
+                      (env [
+                        (n
+                          (VClosure
+                            (env [
+                            ])
+                            (argName f)
+                            (body
+                              (Lambda x
+                                (Var x)
+                              )
+                            )
+                          )
+                        )
+                        (zero
+                          (VClosure
+                            (env [
+                            ])
+                            (argName f)
+                            (body
+                              (Lambda x
+                                (Var x)
+                              )
+                            )
+                          )
+                        )
+                      ])
+                      (argName f)
+                      (body
+                        (Lambda x
+                          (App
+                            (Var f)
+                            (App
+                              (App
+                                (Var n)
+                                (Var f)
+                              )
+                              (Var x)
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                  (zero
+                    (VClosure
+                      (env [
+                      ])
+                      (argName f)
+                      (body
+                        (Lambda x
+                          (Var x)
+                        )
+                      )
+                    )
+                  )
+                ])
+                (argName f)
+                (body
+                  (Lambda x
+                    (App
+                      (Var f)
+                      (App
+                        (App
+                          (Var n)
+                          (Var f)
+                        )
+                        (Var x)
+                      )
+                    )
+                  )
+                )
+              )
+            )
+            (zero
+              (VClosure
+                (env [
+                ])
+                (argName f)
+                (body
+                  (Lambda x
+                    (Var x)
+                  )
+                )
+              )
+)
+          ])
+          (argName f)
+          (body
+            (Lambda x
+              (App
+                (Var f)
+                (App
+                  (App
+                    (Var n)
+                    (Var f)
+                  )
+                  (Var x)
+                )
+              )
+            )
+          )
+        )
+      )
+      (zero
+        (VClosure
+          (env [
+          ])
+          (argName f)
+          (body
+            (Lambda x
+              (Var x)
+            )
+          )
+        )
+      )
+    ])
+    (argName f)
+    (body
+      (Lambda x
+        (App
+          (App
+            (Var j)
+            (Var f)
+          )
+          (App
+            (App
+              (Var k)
+              (Var f)
+            )
+            (Var x)
+          )
+        )
+      )
+    )
+  )
+Eval:  application rator application rator variable + rand application rator variable add1 rand application rator variable add1 rand variable zero))) rand application rator variable add1 rand application rator variable add1 rand application rator variable add1 rand variable zero))))
+Eval:  application rator variable + rand application rator variable add1 rand application rator variable add1 rand variable zero)))
+Eval:  variable +
