@@ -1,6 +1,6 @@
 import Foundation
 
-typealias Name = String
+public typealias Name = String
 
 enum Message: Error {
   case notFound(Name)
@@ -11,7 +11,7 @@ protocol Show: CustomStringConvertible {
 }
 
 extension Show {
-  var description: String {
+  public var description: String {
     let result = prettyPrint(offsetChars: indent)
     return String(result.joined(separator: "\n"))
   }
@@ -22,7 +22,7 @@ protocol Value: Show {
   func readBack(used: [String]) -> Result<Expr, Message>
 }
 
-typealias Defs = [(name: Name, expr: Expr)]
+public typealias Defs = [(name: Name, expr: Expr)]
 
 let indent = 2
 
@@ -32,7 +32,7 @@ func padding(chars: Int) -> String {
 
 let tab = padding(chars: indent)
 
-struct Env {
+public struct Env {
   let values: [Name: Value]
 
   subscript(name: Name) -> Value? {
@@ -61,11 +61,11 @@ struct Env {
 
 struct VClosure: Value {
   let env: Env
-  let argName: Name
+  let variable: Name  // Christiansen calls this `var`, but `var` is a Swift keyword
   let body: Expr
 
   func apply(argValue: Value) -> Result<Value, Message> {
-    return body.eval(env: self.env.extend(name: argName, value: argValue))
+    return body.eval(env: self.env.extend(name: variable, value: argValue))
   }
 
   func prettyPrint(offsetChars: Int) -> [String] {
@@ -75,7 +75,7 @@ struct VClosure: Value {
     result.append("\(leftPad)\(tab)(env [")
     result.append(contentsOf: env.prettyPrint(offsetChars: offsetChars + indent))
     result.append("\(leftPad)\(tab)])")
-    result.append("\(leftPad)\(tab)(argName \(argName))")
+    result.append("\(leftPad)\(tab)(variable \(variable))")
     result.append("\(leftPad)\(tab)(body")
     result.append(contentsOf: body.prettyPrint(offsetChars: offsetChars + indent + indent))
     result.append("\(leftPad)\(tab))")
@@ -95,7 +95,7 @@ struct VClosure: Value {
   }
 
   func readBack(used: [String]) -> Result<Expr, Message> {
-    let x = freshen(used: used, x: argName)
+    let x = freshen(used: used, x: variable)
     var newUsed = used
     newUsed.append(x)
     return self.apply(argValue: VNeutral(neutral: .nvar(x)))
@@ -157,7 +157,7 @@ struct VNeutral: Value {
   }
 }
 
-indirect enum Expr: Show {
+public indirect enum Expr: Show {
   case variable(Name)
   case lambda(Name, Expr)
   case application(Expr, Expr)
@@ -170,9 +170,9 @@ indirect enum Expr: Show {
       }
       return .success(value)
     case .lambda(let name, let body):
-      return .success(VClosure(env: env, argName: name, body: body))
+      return .success(VClosure(env: env, variable: name, body: body))
     // "The names rator and rand are short for 'operator' and 'operand.'
-    //  These names go back to Landin (1964).""
+    //  These names go back to Landin (1964)."
     case .application(let rator, let rand):
       return rator.eval(env: env)
         .flatMap {

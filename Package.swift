@@ -4,15 +4,17 @@
 import PackageDescription
 
 let package = Package(
-    name: "bidi",
+    name: "Bidi",
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
+        .target(
+            name: "Bidi",
+            path: "Sources/Bidi"
+        ),
         .executableTarget(
-            name: "bidi"),
+            name: "Executable",
+            dependencies: [ "Bidi" ]),
         .testTarget(
-            name: "bidiTests",
-            dependencies: ["bidi"]
-        )
+            name: "BidiTests",
+            dependencies: [ "Bidi" ]),
     ]
 )

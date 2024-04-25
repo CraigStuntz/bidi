@@ -7,10 +7,10 @@
                 "swift"
             ],
             "args": [],
-            "cwd": "${workspaceFolder:bidi}",
-            "name": "Debug bidi",
-            "program": "${workspaceFolder:bidi}/.build/debug/bidi",
-            "preLaunchTask": "swift: Build Debug bidi"
+            "cwd": "${workspaceFolder:Bidi}",
+            "name": "Debug Bidi",
+            "program": "${workspaceFolder:Bidi}/.build/debug/Bidi",
+            "preLaunchTask": "swift: Build Debug Bidi"
         },
         {
             "type": "lldb",
@@ -19,10 +19,34 @@
                 "swift"
             ],
             "args": [],
-            "cwd": "${workspaceFolder:bidi}",
-            "name": "Release bidi",
-            "program": "${workspaceFolder:bidi}/.build/release/bidi",
-            "preLaunchTask": "swift: Build Release bidi"
+            "cwd": "${workspaceFolder:Bidi}",
+            "name": "Release Bidi",
+            "program": "${workspaceFolder:Bidi}/.build/release/Bidi",
+            "preLaunchTask": "swift: Build Release Bidi"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:Bidi}",
+            "name": "Debug Executable",
+            "program": "${workspaceFolder:Bidi}/.build/debug/Executable",
+            "preLaunchTask": "swift: Build Debug Executable"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:Bidi}",
+            "name": "Release Executable",
+            "program": "${workspaceFolder:Bidi}/.build/release/Executable",
+            "preLaunchTask": "swift: Build Release Executable"
         }
     ]
 }

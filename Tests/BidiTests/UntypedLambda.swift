@@ -1,6 +1,6 @@
 import XCTest
 
-@testable import bidi
+@testable import Bidi
 
 let churchDefs: Defs = [
   ("zero", .lambda("f", .lambda("x", .variable("x")))),
@@ -60,10 +60,10 @@ func testFail() -> Result<Expr, Message> {
 class EnvTests: XCTestCase {
   func testEnvIsImmutable() throws {
     let env = Env(values: [
-      "foo": VClosure(env: Env(values: [:]), argName: "bar", body: .variable("x"))
+      "foo": VClosure(env: Env(values: [:]), variable: "bar", body: .variable("x"))
     ])
     let newEnv = env.extend(
-      name: "baz", value: VClosure(env: Env(values: [:]), argName: "qux", body: .variable("boo")))
+      name: "baz", value: VClosure(env: Env(values: [:]), variable: "qux", body: .variable("boo")))
 
     XCTAssertNotNil(env["foo"])
     XCTAssertNil(env["baz"])
