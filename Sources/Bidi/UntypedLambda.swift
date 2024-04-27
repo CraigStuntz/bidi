@@ -2,11 +2,11 @@ import Foundation
 
 public typealias Name = String
 
-enum Message: Error {
+public enum Message: Error {
   case notFound(Name)
 }
 
-protocol Show: CustomStringConvertible {
+public protocol Show: CustomStringConvertible {
   func prettyPrint(offsetChars: Int) -> [String]
 }
 
@@ -17,7 +17,7 @@ extension Show {
   }
 }
 
-protocol Value: Show {
+public protocol Value: Show {
   func apply(argValue: Value) -> Result<Value, Message>
   func readBack(used: [String]) -> Result<Expr, Message>
 }
@@ -45,6 +45,14 @@ public struct Env {
     return Env(values: result)
   }
 
+  init (values: [Name: Value]) {
+    self.values = values
+  }
+
+  public init() {
+    self.init(values: [:])
+  }
+
   func prettyPrint(offsetChars: Int) -> [String] {
     var result: [String] = []
     let leftPad = padding(chars: offsetChars)
@@ -64,11 +72,11 @@ struct VClosure: Value {
   let variable: Name  // Christiansen calls this `var`, but `var` is a Swift keyword
   let body: Expr
 
-  func apply(argValue: Value) -> Result<Value, Message> {
+  public func apply(argValue: Value) -> Result<Value, Message> {
     return body.eval(env: self.env.extend(name: variable, value: argValue))
   }
 
-  func prettyPrint(offsetChars: Int) -> [String] {
+  public func prettyPrint(offsetChars: Int) -> [String] {
     var result: [String] = []
     let leftPad = padding(chars: offsetChars)
     result.append("\(leftPad)(VClosure")
@@ -94,7 +102,7 @@ struct VClosure: Value {
     return x
   }
 
-  func readBack(used: [String]) -> Result<Expr, Message> {
+  public func readBack(used: [String]) -> Result<Expr, Message> {
     let x = freshen(used: used, x: variable)
     var newUsed = used
     newUsed.append(x)
@@ -129,11 +137,11 @@ indirect enum Neutral {
 struct VNeutral: Value {
   let neutral: Neutral
 
-  func apply(argValue: Value) -> Result<Value, Message> {
+  public func apply(argValue: Value) -> Result<Value, Message> {
     return .success(VNeutral(neutral: .napp(neutral, argValue)))
   }
 
-  func prettyPrint(offsetChars: Int) -> [String] {
+  public func prettyPrint(offsetChars: Int) -> [String] {
     var result: [String] = []
     let leftPad = padding(chars: offsetChars)
     result.append("\(leftPad)(VNeutral")
@@ -142,7 +150,7 @@ struct VNeutral: Value {
     return result
   }
 
-  func readBack(used: [String]) -> Result<Expr, Message> {
+  public func readBack(used: [String]) -> Result<Expr, Message> {
     switch neutral {
     case .nvar(let name):
       return .success(.variable(name))
@@ -162,7 +170,7 @@ public indirect enum Expr: Show {
   case lambda(Name, Expr)
   case application(Expr, Expr)
 
-  func eval(env: Env) -> Result<Value, Message> {
+  public func eval(env: Env) -> Result<Value, Message> {
     switch self {
     case .variable(let name):
       guard let value = env[name] else {
@@ -186,12 +194,12 @@ public indirect enum Expr: Show {
   }
 
   // Unused in David's document?
-  func normalize() -> Result<Expr, Message> {
+  public func normalize() -> Result<Expr, Message> {
     return self.eval(env: Env(values: [:]))
       .flatMap { val in val.readBack(used: []) }
   }
 
-  func prettyPrint(offsetChars: Int) -> [String] {
+  public func prettyPrint(offsetChars: Int) -> [String] {
     var result: [String] = []
     let leftPad = padding(chars: offsetChars)
     switch self {
@@ -221,7 +229,7 @@ func addDef(env: Env, name: Name, expr: Expr) -> Result<Env, Message> {
     }
 }
 
-func addDefs(env: Env = Env(values: [:]), defs: Defs) -> Result<Env, Message> {
+func addDefs(env: Env = Env(), defs: Defs) -> Result<Env, Message> {
   return defs.reduce(
     .success(env),
     { (result, def) in
