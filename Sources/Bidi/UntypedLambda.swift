@@ -19,6 +19,7 @@ extension Show {
 
 public protocol Value: Show {
   func apply(argValue: Value) -> Result<Value, Message>
+  /// Think of readBack as "to Expr" (maybe!)
   func readBack(used: [String]) -> Result<Expr, Message>
 }
 
@@ -45,7 +46,7 @@ public struct Env {
     return Env(values: result)
   }
 
-  init (values: [Name: Value]) {
+  init(values: [Name: Value]) {
     self.values = values
   }
 
@@ -67,7 +68,7 @@ public struct Env {
   }
 }
 
-struct VClosure: Value {
+public struct VClosure: Value {
   let env: Env
   let variable: Name  // Christiansen calls this `var`, but `var` is a Swift keyword
   let body: Expr
@@ -114,7 +115,7 @@ struct VClosure: Value {
   }
 }
 
-indirect enum Neutral {
+public indirect enum Neutral {
   case nvar(Name)
   case napp(Neutral, Value)
 
@@ -134,11 +135,15 @@ indirect enum Neutral {
   }
 }
 
-struct VNeutral: Value {
+public struct VNeutral: Value {
   let neutral: Neutral
 
   public func apply(argValue: Value) -> Result<Value, Message> {
     return .success(VNeutral(neutral: .napp(neutral, argValue)))
+  }
+
+  public init(neutral: Neutral) {
+    self.neutral = neutral
   }
 
   public func prettyPrint(offsetChars: Int) -> [String] {
@@ -170,6 +175,7 @@ public indirect enum Expr: Show {
   case lambda(Name, Expr)
   case application(Expr, Expr)
 
+  /// Think of eval as "to Value" (maybe!)
   public func eval(env: Env) -> Result<Value, Message> {
     switch self {
     case .variable(let name):
@@ -219,29 +225,40 @@ public indirect enum Expr: Show {
   }
 }
 
-func addDef(env: Env, name: Name, expr: Expr) -> Result<Env, Message> {
-  return
-    expr
-    .eval(env: env)
-    .flatMap {
-      (v: Value) in
-      .success(env.extend(name: name, value: v))
-    }
-}
+public struct Program {
+  let maybeEnv: Result<Env, Message>
+  let body: Expr
+  let used: [String]
 
-func addDefs(env: Env = Env(), defs: Defs) -> Result<Env, Message> {
-  return defs.reduce(
-    .success(env),
-    { (result, def) in
-      result.flatMap { env in addDef(env: env, name: def.name, expr: def.expr) }
-    }
-  )
-}
+  static func addDef(env: Env, name: Name, expr: Expr) -> Result<Env, Message> {
+    return
+      expr
+      .eval(env: env)
+      .flatMap {
+        (v: Value) in
+        .success(env.extend(name: name, value: v))
+      }
+  }
 
-func runProgram(defs: Defs, body: Expr) -> Result<Expr, Message> {
-  return addDefs(defs: defs)
-    .flatMap { env in
+  static func addDefs(_ defs: Defs) -> Result<Env, Message> {
+    return defs.reduce(
+      .success(Env()),
+      { (result, def) in
+        result.flatMap { env in addDef(env: env, name: def.name, expr: def.expr) }
+      }
+    )
+  }
+
+  public init(defs: Defs, body: Expr) {
+    self.body = body
+    self.maybeEnv = Program.addDefs(defs)
+    self.used = defs.map { def in def.name }
+  }
+
+  public func run() -> Result<Expr, Message> {
+    maybeEnv.flatMap { env in
       body.eval(env: env)
-        .flatMap { val in val.readBack(used: defs.map { def in def.name }) }
+        .flatMap { val in val.readBack(used: used) }
     }
+  }
 }
