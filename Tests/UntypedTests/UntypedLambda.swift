@@ -1,6 +1,6 @@
 import XCTest
 
-@testable import Bidi
+@testable import Untyped
 
 let churchDefs: Defs = [
   ("zero", .lambda("f", .lambda("x", .variable("x")))),

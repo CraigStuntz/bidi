@@ -7,14 +7,18 @@ let package = Package(
     name: "Bidi",
     targets: [
         .target(
+            name: "Untyped",
+            path: "Sources/Untyped"
+        ),
+        .target(
             name: "Bidi",
             path: "Sources/Bidi"
         ),
         .executableTarget(
             name: "Executable",
-            dependencies: [ "Bidi" ]),
+            dependencies: [ "Untyped" ]),
         .testTarget(
-            name: "BidiTests",
-            dependencies: [ "Bidi" ]),
+            name: "UntypedTests",
+            dependencies: [ "Untyped" ]),
     ]
 )
