@@ -5,15 +5,11 @@ public enum Message: Error {
   case notFound(Name)
 }
 
-public protocol Foo: Show {}
-
 public typealias Defs = [(name: Name, expr: Expr)]
 
 let indent = 2
 
 let tab = padding(chars: indent)
-
-typealias ValueEnv = Env<Value>
 
 public indirect enum Neutral {
   case nvar(Name)
