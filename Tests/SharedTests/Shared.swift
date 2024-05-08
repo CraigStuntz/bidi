@@ -2,21 +2,13 @@ import XCTest
 
 @testable import Shared
 
-struct FancyString: Show {
-  let value: String
-
-  public func prettyPrint(offsetChars: Int) -> [String] {
-    return [value]
-  }
-}
-
 class EnvTests: XCTestCase {
   func testEnvIsImmutable() throws {
-    let env = Env<FancyString>(values: [
-      "foo": FancyString(value: "bar")
+    let env = Env<String>(values: [
+      "foo": "bar"
     ])
     let newEnv = env.extend(
-      name: "baz", value: FancyString(value: "qux")
+      name: "baz", value: "qux"
     )
 
     XCTAssertNotNil(env["foo"])

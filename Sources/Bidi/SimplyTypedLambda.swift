@@ -47,21 +47,16 @@ public indirect enum Expr {
   case annotation(Expr, Type)
 }
 
-public indirect enum Type: Equatable, Show {
+public typealias Context = Env<Type>
+public typealias Defs = [(name: Name, expr: Expr)]
+
+public indirect enum Type: Equatable {
   /// The type of natural numbers
   case tnat
   /// Arrow type (function), Associated values are arg and ret (the type of the
   /// argument to the function and the type the function returns)
   case tarr(Type, Type)
-
-  public func prettyPrint(offsetChars: Int) -> [String] {
-    let leftPad = padding(chars: offsetChars)
-    return ["\(leftPad)\(String(describing: self))"]
-  }
-
 }
-
-typealias Context = Env<Type>
 
 extension Context {
   public func lookup(name: Name) -> Result<Type, Message> {
@@ -131,4 +126,41 @@ extension Context {
       }
     }
   }
+}
+
+public struct Program {
+  let maybeEnv: Result<Context, Message>
+  let body: Expr
+  let used: [String]
+
+  static func addDef(ctx: Context, name: Name, expr: Expr) -> Result<Context, Message> {
+    return
+      ctx.synth(expr: expr)
+      .flatMap {
+        (t: Type) in
+        .success(ctx.extend(name: name, value: t))
+      }
+  }
+
+  public static func addDefs(_ defs: Defs) -> Result<Context, Message> {
+    return defs.reduce(
+      .success(Context()),
+      { (result, def) in
+        result.flatMap { ctx in addDef(ctx: ctx, name: def.name, expr: def.expr) }
+      }
+    )
+  }
+
+  public init(defs: Defs, body: Expr) {
+    self.body = body
+    self.maybeEnv = Program.addDefs(defs)
+    self.used = defs.map { def in def.name }
+  }
+
+  //   public func run() -> Result<Expr, Message> {
+  //     maybeEnv.flatMap { ctx in
+  //       body.eval(ctx: ctx)
+  //         .flatMap { val in val.readBack(used: used) }
+  //     }
+  //   }
 }

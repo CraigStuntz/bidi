@@ -63,7 +63,7 @@ class UntypedLambdaTests: XCTestCase {
   func test2plus3() throws {
     let result = test()
     let actual = try result.get()
-    print(actual)
+    dump(actual)
   }
 
   func test2plus3WithBug() throws {

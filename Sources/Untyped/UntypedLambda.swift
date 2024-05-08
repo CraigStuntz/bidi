@@ -7,31 +7,12 @@ public enum Message: Error {
 
 public typealias Defs = [(name: Name, expr: Expr)]
 
-let indent = 2
-
-let tab = padding(chars: indent)
-
 public indirect enum Neutral {
   case nvar(Name)
   case napp(Neutral, Value)
-
-  func prettyPrint(offsetChars: Int) -> [String] {
-    var result: [String] = []
-    let leftPad = padding(chars: offsetChars)
-    switch self {
-    case .nvar(let name):
-      result.append("\(leftPad)(NVar \(name))")
-    case .napp(let neutral, let value):
-      result.append("\(leftPad)(NApp")
-      result.append(contentsOf: neutral.prettyPrint(offsetChars: offsetChars + indent))
-      result.append(contentsOf: value.prettyPrint(offsetChars: offsetChars + indent))
-      result.append("\(leftPad))")
-    }
-    return result
-  }
 }
 
-public enum Value: Show {
+public enum Value {
   /// The associated values here are the environment, the variable (function argument) name, and the body
   case vclosure(Env<Value>, Name, Expr)
   case vneutral(Neutral)
@@ -42,31 +23,6 @@ public enum Value: Show {
       return body.eval(env: env.extend(name: variable, value: argValue))
     case .vneutral(let neutral):
       return .success(.vneutral(.napp(neutral, argValue)))
-    }
-  }
-
-  public func prettyPrint(offsetChars: Int) -> [String] {
-    switch self {
-    case .vclosure(let env, let variable, let body):
-      var result: [String] = []
-      let leftPad = padding(chars: offsetChars)
-      result.append("\(leftPad)(VClosure")
-      result.append("\(leftPad)\(tab)(env [")
-      result.append(contentsOf: env.prettyPrint(offsetChars: offsetChars + indent))
-      result.append("\(leftPad)\(tab)])")
-      result.append("\(leftPad)\(tab)(variable \(variable))")
-      result.append("\(leftPad)\(tab)(body")
-      result.append(contentsOf: body.prettyPrint(offsetChars: offsetChars + indent + indent))
-      result.append("\(leftPad)\(tab))")
-      result.append("\(leftPad))")
-      return result
-    case .vneutral(let neutral):
-      var result: [String] = []
-      let leftPad = padding(chars: offsetChars)
-      result.append("\(leftPad)(VNeutral")
-      result.append(contentsOf: neutral.prettyPrint(offsetChars: offsetChars + indent))
-      result.append("\(leftPad))")
-      return result
     }
   }
 
@@ -108,7 +64,7 @@ public enum Value: Show {
   }
 }
 
-public indirect enum Expr: Show {
+public indirect enum Expr {
   case variable(Name)
   case lambda(Name, Expr)
   case application(Expr, Expr)
@@ -141,25 +97,6 @@ public indirect enum Expr: Show {
   public func normalize() -> Result<Expr, Message> {
     return self.eval(env: Env<Value>())
       .flatMap { val in val.readBack(used: []) }
-  }
-
-  public func prettyPrint(offsetChars: Int) -> [String] {
-    var result: [String] = []
-    let leftPad = padding(chars: offsetChars)
-    switch self {
-    case .variable(let name):
-      result.append("\(leftPad)(Var \(name))")
-    case .lambda(let name, let body):
-      result.append("\(leftPad)(Lambda \(name)")
-      result.append(contentsOf: body.prettyPrint(offsetChars: offsetChars + indent))
-      result.append("\(leftPad))")
-    case .application(let rator, let rand):
-      result.append("\(leftPad)(App")
-      result.append(contentsOf: rator.prettyPrint(offsetChars: offsetChars + indent))
-      result.append(contentsOf: rand.prettyPrint(offsetChars: offsetChars + indent))
-      result.append("\(leftPad))")
-    }
-    return result
   }
 }
 

@@ -24,6 +24,10 @@ let package = Package(
             name: "Executable",
             dependencies: [ "Untyped" ]),
         .testTarget(
+            name: "BidiTests",
+            dependencies: [ "Bidi" ]
+        ),
+        .testTarget(
             name: "SharedTests",
             dependencies: [ "Shared" ]),
         .testTarget(
