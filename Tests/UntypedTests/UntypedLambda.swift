@@ -59,21 +59,6 @@ func testFail() -> Result<Expr, Message> {
   ).run()
 }
 
-class EnvTests: XCTestCase {
-  func testEnvIsImmutable() throws {
-    let env = Env(values: [
-      "foo": VClosure(env: Env(values: [:]), variable: "bar", body: .variable("x"))
-    ])
-    let newEnv = env.extend(
-      name: "baz", value: VClosure(env: Env(values: [:]), variable: "qux", body: .variable("boo")))
-
-    XCTAssertNotNil(env["foo"])
-    XCTAssertNil(env["baz"])
-    XCTAssertNotNil(newEnv["foo"])
-    XCTAssertNotNil(newEnv["foo"])
-  }
-}
-
 class UntypedLambdaTests: XCTestCase {
   func test2plus3() throws {
     let result = test()

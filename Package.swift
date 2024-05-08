@@ -7,16 +7,25 @@ let package = Package(
     name: "Bidi",
     targets: [
         .target(
+            name: "Shared",
+            path: "Sources/Shared"
+        ),
+        .target(
             name: "Untyped",
+            dependencies: [ "Shared" ],
             path: "Sources/Untyped"
         ),
         .target(
             name: "Bidi",
+            dependencies: [ "Shared" ],
             path: "Sources/Bidi"
         ),
         .executableTarget(
             name: "Executable",
             dependencies: [ "Untyped" ]),
+        .testTarget(
+            name: "SharedTests",
+            dependencies: [ "Shared" ]),
         .testTarget(
             name: "UntypedTests",
             dependencies: [ "Untyped" ]),

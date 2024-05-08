@@ -1,4 +1,4 @@
-public typealias Name = String
+import Shared
 
 public enum Message: Error, CustomStringConvertible {
   case cannotType(Expr)
@@ -47,35 +47,23 @@ public indirect enum Expr {
   case annotation(Expr, Type)
 }
 
-public indirect enum Type: Equatable {
+public indirect enum Type: Equatable, Show {
   /// The type of natural numbers
   case tnat
   /// Arrow type (function), Associated values are arg and ret (the type of the
   /// argument to the function and the type the function returns)
   case tarr(Type, Type)
+
+  public func prettyPrint(offsetChars: Int) -> [String] {
+    let leftPad = padding(chars: offsetChars)
+    return ["\(leftPad)\(String(describing: self))"]
+  }
+
 }
 
-public struct Context {
-  let values: [Name: Type]
+typealias Context = Env<Type>
 
-  public init(values: [Name: Type]) {
-    self.values = values
-  }
-
-  public init() {
-    self.init(values: [:])
-  }
-
-  func extend(name: Name, type: Type) -> Context {
-    var result = values
-    result[name] = type
-    return Context(values: result)
-  }
-
-  subscript(name: Name) -> Type? {
-    return self.values[name]
-  }
-
+extension Context {
   public func lookup(name: Name) -> Result<Type, Message> {
     guard let type = self[name] else {
       return .failure(.notFound(name))
@@ -120,7 +108,7 @@ public struct Context {
       case .tarr(let arg, let ret):
         return
           self
-          .extend(name: x, type: arg)
+          .extend(name: x, value: arg)
           .check(expr: body, type: ret)
       case .tnat: return .failure(.lambdaRequiresArrow(type))
       }
