@@ -40,6 +40,11 @@ class SimplyTypedTests: XCTestCase {
         }
       }
     }
-    customDump(try actual.get())
+    guard case .success((let t1, let t2)) = actual else {
+      return XCTFail("Expected success, got \(actual)")
+    }
+    XCTAssertEqual(.tarr(.tnat, .tnat), t1)
+    XCTAssertEqual(.tnat, t2)
+    customDump(actual)
   }
 }
