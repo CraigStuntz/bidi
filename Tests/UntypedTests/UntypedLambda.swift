@@ -1,3 +1,4 @@
+import CustomDump
 import XCTest
 
 @testable import Untyped
@@ -63,7 +64,7 @@ class UntypedLambdaTests: XCTestCase {
   func test2plus3() throws {
     let result = test()
     let actual = try result.get()
-    dump(actual)
+    customDump(actual)
   }
 
   func test2plus3WithBug() throws {

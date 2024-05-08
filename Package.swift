@@ -5,6 +5,9 @@ import PackageDescription
 
 let package = Package(
     name: "Bidi",
+    dependencies: [
+        .package(url: "https://github.com/pointfreeco/swift-custom-dump", from: "1.0.0")
+    ],
     targets: [
         .target(
             name: "Shared",
@@ -25,13 +28,19 @@ let package = Package(
             dependencies: [ "Untyped" ]),
         .testTarget(
             name: "BidiTests",
-            dependencies: [ "Bidi" ]
+            dependencies: [ 
+                "Bidi", 
+                .product(name: "CustomDump", package: "swift-custom-dump")
+        ]
         ),
         .testTarget(
             name: "SharedTests",
             dependencies: [ "Shared" ]),
         .testTarget(
             name: "UntypedTests",
-            dependencies: [ "Untyped" ]),
+            dependencies: [ 
+                "Untyped",
+                .product(name: "CustomDump", package: "swift-custom-dump")
+            ]),
     ]
 )

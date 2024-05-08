@@ -1,3 +1,4 @@
+import CustomDump
 import XCTest
 
 @testable import Bidi
@@ -39,6 +40,6 @@ class SimplyTypedTests: XCTestCase {
         }
       }
     }
-    dump(try actual.get())
+    customDump(try actual.get())
   }
 }
