@@ -47,7 +47,7 @@ public indirect enum Expr {
   case annotation(Expr, Type)
 }
 
-public typealias Context = Env<Type>
+public typealias Context = [Name: Type]
 public typealias Defs = [(name: Name, expr: Expr)]
 
 public indirect enum Type: Equatable {

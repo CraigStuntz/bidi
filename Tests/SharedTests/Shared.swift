@@ -4,9 +4,9 @@ import XCTest
 
 class EnvTests: XCTestCase {
   func testEnvIsImmutable() throws {
-    let env = Env<String>(values: [
+    let env = [
       "foo": "bar"
-    ])
+    ]
     let newEnv = env.extend(
       name: "baz", value: "qux"
     )

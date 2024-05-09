@@ -6,6 +6,7 @@ public enum Message: Error {
 }
 
 public typealias Defs = [(name: Name, expr: Expr)]
+public typealias Env = [Name: Value]
 
 public indirect enum Neutral {
   case nvar(Name)
@@ -14,7 +15,7 @@ public indirect enum Neutral {
 
 public enum Value {
   /// The associated values here are the environment, the variable (function argument) name, and the body
-  case vclosure(Env<Value>, Name, Expr)
+  case vclosure(Env, Name, Expr)
   case vneutral(Neutral)
 
   public func apply(argValue: Value) -> Result<Value, Message> {
@@ -70,7 +71,7 @@ public indirect enum Expr {
   case application(Expr, Expr)
 
   /// Think of eval as "to Value" (maybe!)
-  public func eval(env: Env<Value>) -> Result<Value, Message> {
+  public func eval(env: Env) -> Result<Value, Message> {
     switch self {
     case .variable(let name):
       guard let value = env[name] else {
@@ -95,17 +96,17 @@ public indirect enum Expr {
 
   // Unused in David's document?
   public func normalize() -> Result<Expr, Message> {
-    return self.eval(env: Env<Value>())
+    return self.eval(env: Env())
       .flatMap { val in val.readBack(used: []) }
   }
 }
 
 public struct Program {
-  let maybeEnv: Result<Env<Value>, Message>
+  let maybeEnv: Result<Env, Message>
   let body: Expr
   let used: [String]
 
-  static func addDef(env: Env<Value>, name: Name, expr: Expr) -> Result<Env<Value>, Message> {
+  static func addDef(env: Env, name: Name, expr: Expr) -> Result<Env, Message> {
     return
       expr
       .eval(env: env)
@@ -115,9 +116,9 @@ public struct Program {
       }
   }
 
-  static func addDefs(_ defs: Defs) -> Result<Env<Value>, Message> {
+  static func addDefs(_ defs: Defs) -> Result<Env, Message> {
     return defs.reduce(
-      .success(Env<Value>()),
+      .success(Env()),
       { (result, def) in
         result.flatMap { env in addDef(env: env, name: def.name, expr: def.expr) }
       }
