@@ -46,29 +46,41 @@ func toChurch(_ n: Int) -> Expr {
   return .application(.variable("add1"), toChurch(n - 1))
 }
 
-func test() -> Result<Expr, Message> {
-  return Program(
-    defs: churchDefs,
-    body: .application(.application(.variable("+"), toChurch(2)), toChurch(3))
-  ).run()
-}
-
-func testFail() -> Result<Expr, Message> {
-  return Program(
-    defs: [],
-    body: .application(.application(.variable("+"), toChurch(2)), toChurch(3))
-  ).run()
-}
-
 class UntypedLambdaTests: XCTestCase {
   func test2plus3() throws {
-    let result = test()
-    let actual = try result.get()
+    let actual = Program(
+      defs: churchDefs,
+      body: .application(.application(.variable("+"), toChurch(2)), toChurch(3))
+    ).run()
+
     customDump(actual)
+    guard case .success(let expr) = actual else {
+      return XCTFail("Expected success, got \(actual)")
+    }
+    XCTAssertEqual(
+      .lambda(
+        "f",
+        .lambda(
+          "x",
+          .application(
+            .variable("f"),
+            .application(
+              .variable("f"),
+              .application(
+                .variable("f"),
+                .application(
+                  .variable("f"),
+                  .application(
+                    .variable("f"),
+                    .variable("x")))))))),
+      expr)
   }
 
   func test2plus3WithBug() throws {
-    let result = testFail()
+    let result = Program(
+      defs: [],
+      body: .application(.application(.variable("+"), toChurch(2)), toChurch(3))
+    ).run()
     switch result {
     case .success:
       XCTFail()

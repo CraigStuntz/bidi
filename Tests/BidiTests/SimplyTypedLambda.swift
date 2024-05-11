@@ -40,11 +40,29 @@ class SimplyTypedTests: XCTestCase {
         }
       }
     }
+
+    customDump(actual)
     guard case .success((let t1, let t2)) = actual else {
       return XCTFail("Expected success, got \(actual)")
     }
     XCTAssertEqual(.tarr(.tnat, .tnat), t1)
     XCTAssertEqual(.tnat, t2)
-    customDump(actual)
+  }
+
+  func testWithBug() throws {
+    let actual: Result<(Type, Type), Message> = Program.addDefs(testDefs).flatMap { ctx in
+      ctx.synth(expr: .application(.variable("+"), .variable("three"))).flatMap { t1 in
+        ctx.synth(
+          expr: .application(
+            .application(.variable("+"), .variable("badReference")), .variable("two"))
+        ).flatMap { t2 in
+          .success((t1, t2))
+        }
+      }
+    }
+
+    guard case .failure(.notFound("badReference")) = actual else {
+      return XCTFail("Expected failure, got \(actual)")
+    }
   }
 }
