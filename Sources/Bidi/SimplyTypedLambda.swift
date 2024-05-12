@@ -45,10 +45,34 @@ public indirect enum Expr {
   /// (step n (rec-Nat n base step)). Another tarr eliminator.
   case recursion(Type, Expr, Expr, Expr)
   case annotation(Expr, Type)
+
+  public func eval(_ env: Env) -> Value {
+    switch self {
+    case .variable(let name):
+      guard let v = env[name] else {
+        fatalError("Internal error: \(name) not found in environment")
+      }
+      return v
+    case .lambda(let arg, let body):
+      return .vclosure(env, arg, body)
+    case .application(let rator, let rand):
+      return rator.eval(env)
+        .apply(arg: rand.eval(env))
+    case .zero:
+      return .vzero
+    case .add1(let n):
+      return .vadd1(n.eval(env))
+    case .recursion(let t, let tgt, let base, let step):
+      return tgt.eval(env).rec(t: t, base: base.eval(env), step: step.eval(env))
+    case .annotation(let e, _):
+      return e.eval(env)
+    }
+  }
 }
 
 public typealias Context = [Name: Type]
 public typealias Defs = [(name: Name, expr: Expr)]
+public typealias Env = [Name: Value]
 
 public indirect enum Type: Equatable {
   /// The type of natural numbers
@@ -126,6 +150,58 @@ extension Context {
       }
     }
   }
+}
+
+public indirect enum Value {
+  case vzero
+  case vadd1(Value)
+  case vclosure(Env, Name, Expr)
+  case vneutral(Type, Neutral)
+
+  public func apply(arg: Value) -> Value {
+    switch self {
+    case .vclosure(let env, let x, let body):
+      return body.eval(env.extend(name: x, value: arg))
+    case .vneutral(let ty, let neu):
+      guard case .tarr(let t1, let t2) = ty else {
+        fatalError("Internal error; expected a .tarr here")
+      }
+      return .vneutral(t2, .napp(neu, Normal(normalType: t1, normalValue: arg)))
+    case .vzero, .vadd1: fatalError("\(self) not exepcted here")
+    }
+  }
+
+  public func rec(t: Type, base: Value, step: Value) -> Value {
+    switch self {
+    case .vzero: return base
+    case .vadd1(let n):
+      return step.apply(arg: n)
+        .apply(arg: n.rec(t: t, base: base, step: step))
+    case .vneutral(let typ, let neu):
+      guard case .tnat = typ else {
+        fatalError("Expected a .tnat here")
+      }
+      return .vneutral(
+        t,
+        .nrec(
+          t, neu,
+          Normal(normalType: t, normalValue: base),
+          Normal(normalType: .tarr(.tnat, .tarr(t, t)), normalValue: step)))
+    case .vclosure:
+      fatalError("VClosure not expected here")
+    }
+  }
+}
+
+public indirect enum Neutral {
+  case nvar(Name)
+  case napp(Neutral, Normal)
+  case nrec(Type, Neutral, Normal, Normal)
+}
+
+public struct Normal {
+  let normalType: Type
+  let normalValue: Value
 }
 
 public struct Program {
