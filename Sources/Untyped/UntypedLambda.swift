@@ -27,21 +27,10 @@ public enum Value {
     }
   }
 
-  private func nextName(x: Name) -> Name {
-    return x + "'"
-  }
-
-  private func freshen(used: [Name], x: Name) -> Name {
-    if used.contains(x) {
-      return freshen(used: used, x: nextName(x: x))
-    }
-    return x
-  }
-
   public func readBack(used: [String]) -> Result<Expr, Message> {
     switch self {
     case .vclosure(_, let variable, _):
-      let x = freshen(used: used, x: variable)
+      let x = used.freshen(x: variable)
       var newUsed = used
       newUsed.append(x)
       return self.apply(argValue: .vneutral(.nvar(x)))

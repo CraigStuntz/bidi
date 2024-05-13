@@ -80,6 +80,31 @@ public indirect enum Type: Equatable {
   /// Arrow type (function), Associated values are arg and ret (the type of the
   /// argument to the function and the type the function returns)
   case tarr(Type, Type)
+
+  public func readBack(used: [Name], value: Value) -> Expr {
+    switch (self, value) {
+    case (.tnat, .vzero):
+      return .zero
+    case (.tnat, .vadd1(let pred)):
+      return .add1(Type.tnat.readBack(used: used, value: pred))
+    case (.tnat, _):
+      fatalError("Internal error; \(value) unexpected here")
+    case (.tarr(let t1, let t2), let fun):
+      let argName: Name =
+        switch fun {
+        case .vclosure(_, let x, _): x
+        default: "x"
+        }
+      let x = used.freshen(x: argName)
+      let xVal: Value = .vneutral(t1, .nvar(x))
+      return .lambda(x, t2.readBack(used: used, value: fun.apply(arg: xVal)))
+    case (let t1, .vneutral(let t2, let neu)):
+      guard t1 == t2 else {
+        fatalError("Internal error: mismatched types \(t1) and \(t2) at readBack")
+      }
+      return neu.readBack(used: used)
+    }
+  }
 }
 
 extension Context {
@@ -197,11 +222,30 @@ public indirect enum Neutral {
   case nvar(Name)
   case napp(Neutral, Normal)
   case nrec(Type, Neutral, Normal, Normal)
+
+  public func readBack(used: [Name]) -> Expr {
+    switch self {
+    case .nvar(let x):
+      return .variable(x)
+    case .napp(let rator, let arg):
+      return .application(rator.readBack(used: used), arg.readBack(used: used))
+    case .nrec(let t, let neu, let base, let step):
+      return .recursion(
+        t,
+        neu.readBack(used: used),
+        base.readBack(used: used),
+        step.readBack(used: used))
+    }
+  }
 }
 
 public struct Normal {
   let normalType: Type
   let normalValue: Value
+
+  public func readBack(used: [Name]) -> Expr {
+    return normalType.readBack(used: used, value: normalValue)
+  }
 }
 
 public struct Program {
