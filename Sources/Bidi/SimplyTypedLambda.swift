@@ -29,7 +29,7 @@ public enum Message: Error, CustomStringConvertible {
   }
 }
 
-public indirect enum Expr {
+public indirect enum Expr: Equatable {
   case variable(Name)
   /// Constructor of function type
   case lambda(Name, Expr)
@@ -71,8 +71,29 @@ public indirect enum Expr {
 }
 
 public typealias Context = [Name: Type]
-public typealias Defs = [(name: Name, expr: Expr)]
 public typealias Env = [Name: Value]
+public typealias Defs = [Name: Normal]
+
+extension Defs {
+  var definedNames: [Name] {
+    return Array(self.keys)
+  }
+
+  public func toContext() -> Context {
+    return mapValues { def in return def.normalType }
+  }
+
+  public func toEnv() -> Env {
+    return mapValues { def in return def.normalValue }
+  }
+
+  public func toNormal(expr: Expr) -> Result<Normal, Message> {
+    toContext().synth(expr: expr).flatMap { t in
+      let v = expr.eval(toEnv())
+      return .success(Normal(normalType: t, normalValue: v))
+    }
+  }
+}
 
 public indirect enum Type: Equatable {
   /// The type of natural numbers
@@ -87,8 +108,6 @@ public indirect enum Type: Equatable {
       return .zero
     case (.tnat, .vadd1(let pred)):
       return .add1(Type.tnat.readBack(used: used, value: pred))
-    case (.tnat, _):
-      fatalError("Internal error; \(value) unexpected here")
     case (.tarr(let t1, let t2), let fun):
       let argName: Name =
         switch fun {
@@ -103,6 +122,8 @@ public indirect enum Type: Equatable {
         fatalError("Internal error: mismatched types \(t1) and \(t2) at readBack")
       }
       return neu.readBack(used: used)
+    default:
+      fatalError("Internal error: (\(self), \(value)) not expected here")
     }
   }
 }
@@ -146,26 +167,22 @@ extension Context {
   }
 
   public func check(expr: Expr, type: Type) -> Result<Void, Message> {
-    switch expr {
-    case .lambda(let x, let body):
-      switch type {
-      case .tarr(let arg, let ret):
-        return
-          self
-          .extend(name: x, value: arg)
-          .check(expr: body, type: ret)
-      case .tnat: return .failure(.lambdaRequiresArrow(type))
-      }
-    case .zero:
-      switch type {
-      case .tnat: return .success(())
-      case .tarr: return .failure(.incorrectType("Zero", .tnat, type))
-      }
-    case .add1(let n):
-      switch type {
-      case .tnat: return self.check(expr: n, type: .tnat)
-      case .tarr: return .failure(.incorrectType("Add1", .tnat, type))
-      }
+    switch (expr, type) {
+    case (.lambda(let x, let body), .tarr(let arg, let ret)):
+      return
+        self
+        .extend(name: x, value: arg)
+        .check(expr: body, type: ret)
+    case (.lambda, .tnat):
+      return .failure(.lambdaRequiresArrow(type))
+    case (.zero, .tnat):
+      return .success(())
+    case (.zero, .tarr):
+      return .failure(.incorrectType("Zero", .tnat, type))
+    case (.add1(let n), .tnat):
+      return self.check(expr: n, type: .tnat)
+    case (.add1, .tarr):
+      return .failure(.incorrectType("Add1", .tnat, type))
     default:
       return synth(expr: expr).flatMap { type2 in
         if type == type2 {
@@ -249,38 +266,43 @@ public struct Normal {
 }
 
 public struct Program {
-  let maybeEnv: Result<Context, Message>
+  let maybeDefs: Result<Defs, Message>
   let body: Expr
-  let used: [String]
+  let used: [Name]
 
-  static func addDef(ctx: Context, name: Name, expr: Expr) -> Result<Context, Message> {
+  static func addDef(defs: Defs, name: Name, expr: Expr) -> Result<Defs, Message> {
     return
-      ctx.synth(expr: expr)
-      .flatMap {
-        (t: Type) in
-        .success(ctx.extend(name: name, value: t))
+      defs.toNormal(expr: expr).flatMap { norm in
+        .success(defs.extend(name: name, value: norm))
       }
   }
 
-  public static func addDefs(_ defs: Defs) -> Result<Context, Message> {
-    return defs.reduce(
-      .success(Context()),
-      { (result, def) in
-        result.flatMap { ctx in addDef(ctx: ctx, name: def.name, expr: def.expr) }
+  public static func addDefs(_ namedExprs: [(name: Name, expr: Expr)]) -> Result<Defs, Message> {
+    return namedExprs.reduce(
+      .success(Defs()),
+      { (result, namedExpr) in
+        result.flatMap { newDefs in
+          addDef(defs: newDefs, name: namedExpr.name, expr: namedExpr.expr)
+        }
       }
     )
   }
 
-  public init(defs: Defs, body: Expr) {
+  public init(namedExprs: [(name: Name, expr: Expr)], body: Expr) {
     self.body = body
-    self.maybeEnv = Program.addDefs(defs)
-    self.used = defs.map { def in def.name }
+    self.maybeDefs = Program.addDefs(namedExprs)
+    self.used =
+      switch maybeDefs {
+      case .success(let defs): defs.definedNames
+      case .failure: []
+      }
   }
 
-  //   public func run() -> Result<Expr, Message> {
-  //     maybeEnv.flatMap { ctx in
-  //       body.eval(ctx: ctx)
-  //         .flatMap { val in val.readBack(used: used) }
-  //     }
-  //   }
+  public func run() -> Result<Expr, Message> {
+    return maybeDefs.flatMap { defs in
+      defs.toNormal(expr: body).flatMap { norm in
+        .success(norm.readBack(used: defs.definedNames))
+      }
+    }
+  }
 }

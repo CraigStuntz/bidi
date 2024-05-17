@@ -1,9 +1,10 @@
 import CustomDump
+import Shared
 import XCTest
 
 @testable import Bidi
 
-let testDefs: Defs = [
+let testDefs: [(name: Name, expr: Expr)] = [
   (
     "two",
     .annotation(.add1(.add1(.zero)), .tnat)
@@ -30,39 +31,59 @@ let testDefs: Defs = [
 ]
 
 class SimplyTypedTests: XCTestCase {
-  func testAdd() throws {
-    let actual: Result<(Type, Type), Message> = Program.addDefs(testDefs).flatMap { ctx in
-      ctx.synth(expr: .application(.variable("+"), .variable("three"))).flatMap { t1 in
-        ctx.synth(
-          expr: .application(.application(.variable("+"), .variable("three")), .variable("two"))
-        ).flatMap { t2 in
-          .success((t1, t2))
-        }
-      }
-    }
+  func testPlus() throws {
+    let actual = Program(
+      namedExprs: testDefs,
+      body: .variable("+")
+    ).run()
 
     customDump(actual)
-    guard case .success((let t1, let t2)) = actual else {
+    guard case .success(let expr) = actual else {
       return XCTFail("Expected success, got \(actual)")
     }
-    XCTAssertEqual(.tarr(.tnat, .tnat), t1)
-    XCTAssertEqual(.tnat, t2)
+    XCTAssertEqual(
+      .lambda(
+        "n",
+        .lambda(
+          "k",
+          .recursion(
+            .tnat, .variable("n"),
+            .variable("k"),
+            .lambda(
+              "pred",
+              .lambda(
+                "almostSum",
+                .add1(.variable("almostSum"))))))),
+      expr)
   }
 
-  func testWithBug() throws {
-    let actual: Result<(Type, Type), Message> = Program.addDefs(testDefs).flatMap { ctx in
-      ctx.synth(expr: .application(.variable("+"), .variable("three"))).flatMap { t1 in
-        ctx.synth(
-          expr: .application(
-            .application(.variable("+"), .variable("badReference")), .variable("two"))
-        ).flatMap { t2 in
-          .success((t1, t2))
-        }
-      }
-    }
+  func testPlus3() throws {
+    let actual = Program(
+      namedExprs: testDefs,
+      body: .application(.variable("+"), .variable("three"))
+    ).run()
 
-    guard case .failure(.notFound("badReference")) = actual else {
-      return XCTFail("Expected failure, got \(actual)")
+    customDump(actual)
+    guard case .success(let expr) = actual else {
+      return XCTFail("Expected success, got \(actual)")
     }
+    XCTAssertEqual(
+      .lambda("k", .add1(.add1(.add1(.variable("k"))))), expr
+    )
+  }
+
+  func testAdd3Plus2() throws {
+    let actual = Program(
+      namedExprs: testDefs,
+      body: .application(.application(.variable("+"), .variable("three")), .variable("two"))
+    ).run()
+
+    customDump(actual)
+    guard case .success(let expr) = actual else {
+      return XCTFail("Expected success, got \(actual)")
+    }
+    XCTAssertEqual(
+      .add1(.add1(.add1(.add1(.add1(.zero))))), expr
+    )
   }
 }
