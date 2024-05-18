@@ -2,7 +2,7 @@ import CustomDump
 import Shared
 import XCTest
 
-@testable import Bidi
+@testable import Simply
 
 let testDefs: [(name: Name, expr: Expr)] = [
   (

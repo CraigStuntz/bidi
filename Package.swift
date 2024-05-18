@@ -19,20 +19,24 @@ let package = Package(
             path: "Sources/Untyped"
         ),
         .target(
-            name: "Bidi",
+            name: "Simply",
             dependencies: [ "Shared" ],
-            path: "Sources/Bidi"
+            path: "Sources/Simply"
+        ),
+        .target(
+            name: "Pie",
+            dependencies: [ "Shared" ],
+            path: "Sources/Pie"
         ),
         .executableTarget(
             name: "Executable",
             dependencies: [ "Untyped" ]),
         .testTarget(
-            name: "BidiTests",
+            name: "SimplyTests",
             dependencies: [ 
-                "Bidi", 
+                "Simply", 
                 .product(name: "CustomDump", package: "swift-custom-dump")
-        ]
-        ),
+            ]),
         .testTarget(
             name: "SharedTests",
             dependencies: [ "Shared" ]),
