@@ -32,14 +32,18 @@ let package = Package(
             name: "Executable",
             dependencies: [ "Untyped" ]),
         .testTarget(
+            name: "SharedTests",
+            dependencies: [ "Shared" ]),
+        .testTarget(
             name: "SimplyTests",
             dependencies: [ 
                 "Simply", 
                 .product(name: "CustomDump", package: "swift-custom-dump")
             ]),
         .testTarget(
-            name: "SharedTests",
-            dependencies: [ "Shared" ]),
+            name: "PieTests",
+            dependencies: [ "Pie" ]
+        ),
         .testTarget(
             name: "UntypedTests",
             dependencies: [ 

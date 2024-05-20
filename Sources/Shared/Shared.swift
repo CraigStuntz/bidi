@@ -10,7 +10,15 @@ extension Dictionary {
   }
 }
 
-extension [String] {
+extension Array {
+  public init(head: Element, rest: [Element]) {
+    self.init()
+    self.append(head)
+    self.append(contentsOf: rest)
+  }
+}
+
+extension [Name] {
   private func nextName(x: Name) -> Name {
     return x + "'"
   }
@@ -20,5 +28,11 @@ extension [String] {
       return self.freshen(x: nextName(x: x))
     }
     return x
+  }
+}
+
+extension [(Name, Int)] {
+  public func lookup(_ name: Name) -> Int? {
+    return first(where: { (n, _) in n == name }).map { (_, i) in i }
   }
 }
