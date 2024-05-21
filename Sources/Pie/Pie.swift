@@ -124,3 +124,94 @@ public indirect enum Expr {
     }
   }
 }
+
+public typealias Env = [(Name, Value)]
+
+extension [(Name, Value)] {
+  public func lookup(_ name: Name) -> Value? {
+    return first(where: { (n, _) in n == name }).map { (_, v) in v }
+  }
+
+  public func eval(_ name: Name) -> Value {
+    return switch lookup(name) {
+    case .some(let value): value
+    case .none: fatalError("Missing value for \(name)")
+    }
+  }
+}
+
+public typealias Type = Value
+
+public indirect enum Value {
+  case vpi(Type, Closure)
+  case vlambda(Closure)
+  case vsigma(Type, Closure)
+  case vpair(Value, Value)
+  case vnat
+  case vzero
+  case vadd1(Value)
+  case veq(Type, Value, Value)
+  case vsame
+  case vtrivial
+  case vsole
+  case vabsurd
+  case vatom
+  case vtick(String)
+  case vu
+  case vneutral(Type, Neutral)
+}
+
+public struct Closure {
+  let env: Env
+  let name: Name
+  let body: Expr
+
+  public init(env: Env, name: Name, body: Expr) {
+    self.env = env
+    self.name = name
+    self.body = body
+  }
+}
+
+public indirect enum Neutral {
+  case nvar(Name)
+  case napp(Neutral, Normal)
+  case ncar(Neutral)
+  case ncdr(Neutral)
+  case nindNat(Neutral, Normal, Normal, Normal)
+  case nreplace(Neutral, Normal, Normal)
+  case nindAbsurd(Neutral, Normal)
+}
+
+public struct Normal {
+  let type: Type
+  let value: Value
+}
+
+public enum CtxEntry {
+  case def(Type, Value)
+  case isa(Type)
+}
+
+public typealias Ctx = [(Name, CtxEntry)]
+
+extension Ctx {
+  public func define(name: Name, type: Type, value: Value) -> Ctx {
+    return prepend(name: name, ctxEntry: .def(type, value))
+  }
+
+  public func extend(name: Name, type: Type) -> Ctx {
+    return prepend(name: name, ctxEntry: .isa(type))
+  }
+
+  public func prepend(name: Name, ctxEntry: CtxEntry) -> Ctx {
+    var result = Ctx()
+    result.append((name, ctxEntry))
+    result.append(contentsOf: self)
+    return result
+  }
+
+  public var names: [Name] {
+    return map { (name, _) in name }
+  }
+}
