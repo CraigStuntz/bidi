@@ -1,10 +1,32 @@
-I'm translating David Christiansen's [bidirectional typechecking Haskell example](https://davidchristiansen.dk/tutorials/implementing-types-hs.pdf) into Swift. 
+# Checking Dependent Types with Normalization by Evaluation (Swift Version)
 
-I have only just started and am partway into the untyped lambda calculus bit. 
+I'm translating David Christiansen's 
+[bidirectional typechecking Haskell example](https://davidchristiansen.dk/tutorials/implementing-types-hs.pdf) 
+into Swift. 
 
-This code is at best an early work in progress. 
+This project is an incomplete work in progress.
 
 David [said](https://davidchristiansen.dk/tutorials/)
 > Please feel free to use or adapt [the examples] for your own purposes. 
 
-But he didn't specify a particular license. So I'm posting this translation under the MIT license.
+But he didn't specify a particular license. So I'm posting this version under 
+the MIT license.
+
+## Running the code
+
+Install dependencies (you only need to do this once). You will need
+[swift-format](https://github.com/apple/swift-format). I installed this via
+Homebrew, as follows, but any method of installation should work so long as it
+ends up on your `PATH`
+
+```bash
+$ brew install swift-format
+```
+
+Run the tests:
+
+```bash
+$ make test
+```
+
+...and, that's it! There is no executable for now, it's just library code.
