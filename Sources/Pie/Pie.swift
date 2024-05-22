@@ -127,15 +127,149 @@ public indirect enum Expr {
 
 public typealias Env = [(Name, Value)]
 
-extension [(Name, Value)] {
+extension Env {
+  func doApply(_ value: Value, arg: Value) -> Value {
+    return switch value {
+    case .vlambda(let closure): closure.eval(value: arg)
+    case .vneutral(.vpi(let dom, let ran), let neu):
+      .vneutral(ran.eval(value: arg), .napp(neu, Normal(type: dom, value: arg)))
+    default: fatalError("Internal error: Not expecting \(value) here")
+    }
+  }
+
+  func doCar(_ value: Value) -> Value {
+    return switch value {
+    case .vpair(let v1, _): v1
+    case .vneutral(.vsigma(let aT, _), let neu): .vneutral(aT, .ncar(neu))
+    default: fatalError("Internal error: Not expecting \(value) here")
+    }
+  }
+
+  func doCdr(_ value: Value) -> Value {
+    return switch value {
+    case .vpair(_, let v2): v2
+    case .vneutral(.vsigma(_, let dT), let neu): .vneutral(dT.eval(value: doCar(value)), .ncdr(neu))
+    default: fatalError("Internal error: Not expecting \(value) here")
+    }
+  }
+
+  func doIndAbsurd(_ value: Value, mot: Value) -> Value {
+    return switch value {
+    case .vneutral(.vabsurd, let neu):
+      .vneutral(mot, .nindabsurd(neu, Normal(type: .vu, value: mot)))
+    default: fatalError("Internal error: Not expecting \(value) here")
+    }
+  }
+
+  func indNatStepType(_ mot: Value) -> Value {
+    return Env([("mot", mot)]).eval(
+      .pi(
+        "n-1", .nat,
+        .pi(
+          "almost",
+          .application(.variable("mot"), .variable("n-1")),
+          .application(.variable("mot"), .add1(.variable("n-1"))))))
+  }
+
+  func doIndNat(_ value: Value, mot: Value, base: Value, step: Value) -> Value {
+    return switch value {
+    case .vadd1(let v):
+      doApply(doApply(step, arg: v), arg: doIndNat(v, mot: mot, base: base, step: step))
+    case .vneutral(.vnat, let neu):
+      .vneutral(
+        doApply(mot, arg: value),
+        .nindnat(
+          neu,
+          Normal(type: .vpi(.vnat, Closure(env: Env(), name: "k", body: .u)), value: mot),
+          Normal(type: doApply(mot, arg: .vzero), value: base),
+          Normal(type: indNatStepType(mot), value: step)))
+    default: fatalError("Internal error: Not expecting \(value) here")
+    }
+  }
+
+  func doReplace(_ value: Value, mot: Value, base: Value) -> Value {
+    switch value {
+    case .vsame: return base
+    case .vneutral(.veq(let ty, let from, let to), let neu):
+      let motT = Value.vpi(ty, Closure(env: Env(), name: "x", body: .u))
+      let baseT = doApply(mot, arg: from)
+      return .vneutral(
+        doApply(mot, arg: to),
+        .nreplace(neu, Normal(type: motT, value: mot), Normal(type: baseT, value: base)))
+    default: fatalError("Internal error: Not expecting \(value) here")
+    }
+  }
+
+  public func eval(_ expr: Expr) -> Value {
+    switch expr {
+    case .variable(let name): return evalVar(name)
+    case .pi(let x, let dom, let ran):
+      return .vpi(eval(dom), Closure(env: self, name: x, body: ran))
+    case .lambda(let x, let body): return .vlambda(Closure(env: self, name: x, body: body))
+    case .application(let rator, let rand): return doApply(eval(rator), arg: eval(rand))
+    case .sigma(let x, let carType, let cdrType):
+      return .vsigma(eval(carType), Closure(env: self, name: x, body: cdrType))
+    case .cons(let a, let d): return .vpair(eval(a), eval(d))
+    case .car(let e): return doCar(eval(e))
+    case .cdr(let e): return doCdr(eval(e))
+    case .nat: return .vnat
+    case .zero: return .vzero
+    case .add1(let e): return .vadd1(eval(e))
+    case .indnat(let tgt, let mot, let base, let step):
+      return doIndNat(eval(tgt), mot: eval(mot), base: eval(base), step: eval(step))
+    case .equal(let ty, let from, let to): return .veq(eval(ty), eval(from), eval(to))
+    case .same: return .vsame
+    case .replace(let tgt, let mot, let base):
+      return doReplace(eval(tgt), mot: eval(mot), base: eval(base))
+    case .trivial: return .vtrivial
+    case .sole: return .vsole
+    case .absurd: return .vabsurd
+    case .indabsurd(let tgt, let mot): return doIndAbsurd(eval(tgt), mot: eval(mot))
+    case .atom: return .vatom
+    case .tick(let x): return .vtick(x)
+    case .u: return .vu
+    case .the(_, let e): return eval(e)
+    }
+  }
+
+  public func evalVar(_ name: Name) -> Value {
+    return switch lookup(name) {
+    case .some(let value): value
+    case .none: fatalError("Missing value for \(name)")
+    }
+  }
+
+  func extend(name: Name, value: Value) -> Env {
+    var result = Env()
+    result.append((name, value))
+    result.append(contentsOf: self)
+    return result
+  }
+
   public func lookup(_ name: Name) -> Value? {
     return first(where: { (n, _) in n == name }).map { (_, v) in v }
   }
 
-  public func eval(_ name: Name) -> Value {
-    return switch lookup(name) {
-    case .some(let value): value
-    case .none: fatalError("Missing value for \(name)")
+  // THis is `mkEnv` in David's tutorial
+  public init(ctx: Ctx) {
+    self.init(
+      ctx.map { (name, ctxEntry) in
+        let value: Value =
+          switch ctxEntry {
+          case .def(_, let val): val
+          case .isa(let type): Value.vneutral(type, .nvar(name))
+          }
+        return (name, value)
+      })
+  }
+}
+
+public enum Message: Error, CustomStringConvertible {
+  case unboundVariable(Name)
+
+  public var description: String {
+    switch self {
+    case .unboundVariable(let name): "Unbound variable: \(name)"
     }
   }
 }
@@ -171,6 +305,10 @@ public struct Closure {
     self.name = name
     self.body = body
   }
+
+  public func eval(value: Value) -> Value {
+    return env.extend(name: name, value: value).eval(body)
+  }
 }
 
 public indirect enum Neutral {
@@ -178,9 +316,9 @@ public indirect enum Neutral {
   case napp(Neutral, Normal)
   case ncar(Neutral)
   case ncdr(Neutral)
-  case nindNat(Neutral, Normal, Normal, Normal)
+  case nindnat(Neutral, Normal, Normal, Normal)
   case nreplace(Neutral, Normal, Normal)
-  case nindAbsurd(Neutral, Normal)
+  case nindabsurd(Neutral, Normal)
 }
 
 public struct Normal {
@@ -204,7 +342,15 @@ extension Ctx {
     return prepend(name: name, ctxEntry: .isa(type))
   }
 
-  public func prepend(name: Name, ctxEntry: CtxEntry) -> Ctx {
+  public func lookupType(name: Name) -> Result<Type, Message> {
+    switch first(where: { (n, _) in n == name }) {
+    case .none: return .failure(.unboundVariable(name))
+    case .some((_, .def(let t, _))): return .success(t)
+    case .some((_, .isa(let t))): return .success(t)
+    }
+  }
+
+  func prepend(name: Name, ctxEntry: CtxEntry) -> Ctx {
     var result = Ctx()
     result.append((name, ctxEntry))
     result.append(contentsOf: self)
