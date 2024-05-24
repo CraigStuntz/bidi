@@ -2,7 +2,9 @@
 
 I'm translating David Christiansen's 
 [bidirectional typechecking Haskell example](https://davidchristiansen.dk/tutorials/implementing-types-hs.pdf) 
-into Swift. 
+into Swift. Why would I do such a thing? It's not because Swift is especially
+well-suited to this task! I want to learn about type checking in dependently 
+typed languages, and I want to learn more about Swift, so, well, why not?
 
 This project is an incomplete work in progress.
 

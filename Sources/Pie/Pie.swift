@@ -44,12 +44,12 @@ public indirect enum Expr {
   }
 
   ///   Helper to test for expression equivalence
-  /// - Parameters:
-  ///   - i: the numberof variable bindings that have been crossed during the current traversal
-  ///   - ns1: namespace that maps names to the depth at which they were bound for e1
-  ///   - e1: expression to test for equality
-  ///   - ns2: namespace that maps names to the depth at which they were bound for e2
-  ///   - e2: expression to test for equality
+  ///
+  /// - Parameter i: the numberof variable bindings that have been crossed during the current traversal
+  /// - Parameter ns1: namespace that maps names to the depth at which they were bound for e1
+  /// - Parameter e1: expression to test for equality
+  /// - Parameter ns2: namespace that maps names to the depth at which they were bound for e2
+  /// - Parameter e2: expression to test for equality
   /// - Returns: True, if equivalent. False if not.
   func αEquivHelper(i: Int, ns1: [(Name, Int)], e1: Expr, ns2: [(Name, Int)], e2: Expr) -> Bool {
     switch (e1, e2) {
@@ -128,103 +128,31 @@ public indirect enum Expr {
 public typealias Env = [(Name, Value)]
 
 extension Env {
-  func doApply(_ value: Value, arg: Value) -> Value {
-    return switch value {
-    case .vlambda(let closure): closure.eval(value: arg)
-    case .vneutral(.vpi(let dom, let ran), let neu):
-      .vneutral(ran.eval(value: arg), .napp(neu, Normal(type: dom, value: arg)))
-    default: fatalError("Internal error: Not expecting \(value) here")
-    }
-  }
-
-  func doCar(_ value: Value) -> Value {
-    return switch value {
-    case .vpair(let v1, _): v1
-    case .vneutral(.vsigma(let aT, _), let neu): .vneutral(aT, .ncar(neu))
-    default: fatalError("Internal error: Not expecting \(value) here")
-    }
-  }
-
-  func doCdr(_ value: Value) -> Value {
-    return switch value {
-    case .vpair(_, let v2): v2
-    case .vneutral(.vsigma(_, let dT), let neu): .vneutral(dT.eval(value: doCar(value)), .ncdr(neu))
-    default: fatalError("Internal error: Not expecting \(value) here")
-    }
-  }
-
-  func doIndAbsurd(_ value: Value, mot: Value) -> Value {
-    return switch value {
-    case .vneutral(.vabsurd, let neu):
-      .vneutral(mot, .nindabsurd(neu, Normal(type: .vu, value: mot)))
-    default: fatalError("Internal error: Not expecting \(value) here")
-    }
-  }
-
-  func indNatStepType(_ mot: Value) -> Value {
-    return Env([("mot", mot)]).eval(
-      .pi(
-        "n-1", .nat,
-        .pi(
-          "almost",
-          .application(.variable("mot"), .variable("n-1")),
-          .application(.variable("mot"), .add1(.variable("n-1"))))))
-  }
-
-  func doIndNat(_ value: Value, mot: Value, base: Value, step: Value) -> Value {
-    return switch value {
-    case .vadd1(let v):
-      doApply(doApply(step, arg: v), arg: doIndNat(v, mot: mot, base: base, step: step))
-    case .vneutral(.vnat, let neu):
-      .vneutral(
-        doApply(mot, arg: value),
-        .nindnat(
-          neu,
-          Normal(type: .vpi(.vnat, Closure(env: Env(), name: "k", body: .u)), value: mot),
-          Normal(type: doApply(mot, arg: .vzero), value: base),
-          Normal(type: indNatStepType(mot), value: step)))
-    default: fatalError("Internal error: Not expecting \(value) here")
-    }
-  }
-
-  func doReplace(_ value: Value, mot: Value, base: Value) -> Value {
-    switch value {
-    case .vsame: return base
-    case .vneutral(.veq(let ty, let from, let to), let neu):
-      let motT = Value.vpi(ty, Closure(env: Env(), name: "x", body: .u))
-      let baseT = doApply(mot, arg: from)
-      return .vneutral(
-        doApply(mot, arg: to),
-        .nreplace(neu, Normal(type: motT, value: mot), Normal(type: baseT, value: base)))
-    default: fatalError("Internal error: Not expecting \(value) here")
-    }
-  }
-
   public func eval(_ expr: Expr) -> Value {
     switch expr {
     case .variable(let name): return evalVar(name)
     case .pi(let x, let dom, let ran):
       return .vpi(eval(dom), Closure(env: self, name: x, body: ran))
     case .lambda(let x, let body): return .vlambda(Closure(env: self, name: x, body: body))
-    case .application(let rator, let rand): return doApply(eval(rator), arg: eval(rand))
+    case .application(let rator, let rand): return eval(rator).doApply(arg: eval(rand))
     case .sigma(let x, let carType, let cdrType):
       return .vsigma(eval(carType), Closure(env: self, name: x, body: cdrType))
     case .cons(let a, let d): return .vpair(eval(a), eval(d))
-    case .car(let e): return doCar(eval(e))
-    case .cdr(let e): return doCdr(eval(e))
+    case .car(let e): return eval(e).doCar()
+    case .cdr(let e): return eval(e).doCdr()
     case .nat: return .vnat
     case .zero: return .vzero
     case .add1(let e): return .vadd1(eval(e))
     case .indnat(let tgt, let mot, let base, let step):
-      return doIndNat(eval(tgt), mot: eval(mot), base: eval(base), step: eval(step))
+      return eval(tgt).doIndNat(mot: eval(mot), base: eval(base), step: eval(step))
     case .equal(let ty, let from, let to): return .veq(eval(ty), eval(from), eval(to))
     case .same: return .vsame
     case .replace(let tgt, let mot, let base):
-      return doReplace(eval(tgt), mot: eval(mot), base: eval(base))
+      return eval(tgt).doReplace(mot: eval(mot), base: eval(base))
     case .trivial: return .vtrivial
     case .sole: return .vsole
     case .absurd: return .vabsurd
-    case .indabsurd(let tgt, let mot): return doIndAbsurd(eval(tgt), mot: eval(mot))
+    case .indabsurd(let tgt, let mot): return eval(tgt).doIndAbsurd(mot: eval(mot))
     case .atom: return .vatom
     case .tick(let x): return .vtick(x)
     case .u: return .vu
@@ -293,6 +221,78 @@ public indirect enum Value {
   case vtick(String)
   case vu
   case vneutral(Type, Neutral)
+
+  func indNatStepType(_ mot: Value) -> Value {
+    return Env([("mot", mot)]).eval(
+      .pi(
+        "n-1", .nat,
+        .pi(
+          "almost",
+          .application(.variable("mot"), .variable("n-1")),
+          .application(.variable("mot"), .add1(.variable("n-1"))))))
+  }
+
+  func doApply(arg: Value) -> Value {
+    return switch self {
+    case .vlambda(let closure): closure.eval(value: arg)
+    case .vneutral(.vpi(let dom, let ran), let neu):
+      .vneutral(ran.eval(value: arg), .napp(neu, Normal(type: dom, value: arg)))
+    default: fatalError("Internal error: Not expecting \(self) here")
+    }
+  }
+
+  func doCar() -> Value {
+    return switch self {
+    case .vpair(let v1, _): v1
+    case .vneutral(.vsigma(let aT, _), let neu): .vneutral(aT, .ncar(neu))
+    default: fatalError("Internal error: Not expecting \(self) here")
+    }
+  }
+
+  func doCdr() -> Value {
+    return switch self {
+    case .vpair(_, let v2): v2
+    case .vneutral(.vsigma(_, let dT), let neu): .vneutral(dT.eval(value: self.doCar()), .ncdr(neu))
+    default: fatalError("Internal error: Not expecting \(self) here")
+    }
+  }
+
+  func doIndAbsurd(mot: Value) -> Value {
+    return switch self {
+    case .vneutral(.vabsurd, let neu):
+      .vneutral(mot, .nindabsurd(neu, Normal(type: .vu, value: mot)))
+    default: fatalError("Internal error: Not expecting \(self) here")
+    }
+  }
+
+  func doIndNat(mot: Value, base: Value, step: Value) -> Value {
+    return switch self {
+    case .vadd1(let v):
+      step.doApply(arg: v).doApply(arg: v.doIndNat(mot: mot, base: base, step: step))
+    case .vneutral(.vnat, let neu):
+      .vneutral(
+        mot.doApply(arg: self),
+        .nindnat(
+          neu,
+          Normal(type: .vpi(.vnat, Closure(env: Env(), name: "k", body: .u)), value: mot),
+          Normal(type: mot.doApply(arg: .vzero), value: base),
+          Normal(type: indNatStepType(mot), value: step)))
+    default: fatalError("Internal error: Not expecting \(self) here")
+    }
+  }
+
+  func doReplace(mot: Value, base: Value) -> Value {
+    switch self {
+    case .vsame: return base
+    case .vneutral(.veq(let ty, let from, let to), let neu):
+      let motT = Value.vpi(ty, Closure(env: Env(), name: "x", body: .u))
+      let baseT = mot.doApply(arg: from)
+      return .vneutral(
+        mot.doApply(arg: to),
+        .nreplace(neu, Normal(type: motT, value: mot), Normal(type: baseT, value: base)))
+    default: fatalError("Internal error: Not expecting \(self) here")
+    }
+  }
 }
 
 public struct Closure {
@@ -355,6 +355,82 @@ extension Ctx {
     result.append((name, ctxEntry))
     result.append(contentsOf: self)
     return result
+  }
+
+  public func readBack(neutral: Neutral) -> Expr {
+    return switch neutral {
+    case .nvar(let x): .variable(x)
+    case .napp(let neu, let arg): .application(readBack(neutral: neu), readBack(normal: arg))
+    case .ncar(let neu): .car(readBack(neutral: neu))
+    case .ncdr(let neu): .cdr(readBack(neutral: neu))
+    case .nindnat(let neu, let mot, let base, let step):
+      .indnat(
+        readBack(neutral: neu),
+        readBack(normal: mot),
+        readBack(normal: base),
+        readBack(normal: step))
+    case .nreplace(let neu, let mot, let base):
+      .replace(
+        readBack(neutral: neu),
+        readBack(normal: mot),
+        readBack(normal: base))
+    case .nindabsurd(let neu, let mot):
+      .indabsurd(
+        .the(.absurd, readBack(neutral: neu)),
+        readBack(normal: mot))
+    }
+  }
+
+  public func readBack(normal: Normal) -> Expr {
+    return readBack(type: normal.type, value: normal.value)
+  }
+
+  func readBack(type: Type, value: Value) -> Expr {
+    switch (type, value) {
+    case (.vnat, .vzero): return .zero
+    case (.vnat, .vadd1(let v)): return .add1(readBack(type: .vnat, value: v))
+    case (.vpi(let dom, let ran), let fun):
+      let x = names.freshen(x: ran.name)
+      let xVal = Value.vneutral(dom, .nvar(x))
+      return .lambda(
+        x,
+        extend(name: x, type: dom)
+          .readBack(type: ran.eval(value: xVal), value: fun.doApply(arg: xVal)))
+    case (.vsigma(let aT, let dT), let pair):
+      return .cons(
+        readBack(type: aT, value: pair.doCar()),
+        readBack(type: dT.eval(value: pair.doCar()), value: pair.doCdr()))
+    case (.vtrivial, _): return .sole
+    case (.vabsurd, .vneutral(.vabsurd, let neu)): return .the(.absurd, readBack(neutral: neu))
+    case (.veq, .vsame): return .same
+    case (.vatom, .vtick(let x)): return .tick(x)
+    case (.vu, .vnat): return .nat
+    case (.vu, .vatom): return .atom
+    case (.vu, .vtrivial): return .trivial
+    case (.vu, .vabsurd): return .absurd
+    case (.vu, .veq(let t, let from, let to)):
+      return .equal(
+        readBack(type: .vu, value: t),
+        readBack(type: t, value: from),
+        readBack(type: t, value: to))
+    case (.vu, .vsigma(let aT, let dT)):
+      let x = names.freshen(x: dT.name)
+      return .sigma(
+        x,
+        readBack(type: .vu, value: aT),
+        extend(name: x, type: aT)
+          .readBack(type: .vu, value: dT.eval(value: .vneutral(aT, .nvar(x)))))
+    case (.vu, .vpi(let aT, let bT)):
+      let x = names.freshen(x: bT.name)
+      return .pi(
+        x,
+        readBack(type: .vu, value: aT),
+        extend(name: x, type: aT)
+          .readBack(type: .vu, value: bT.eval(value: .vneutral(aT, .nvar(x)))))
+    case (.vu, .vu): return .u
+    case (_, .vneutral(_, let neu)): return readBack(neutral: neu)
+    default: fatalError("Internal error, not expecting \(type) and \(value) here.")
+    }
   }
 
   public var names: [Name] {
