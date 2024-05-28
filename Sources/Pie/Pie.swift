@@ -45,11 +45,12 @@ public indirect enum Expr {
 
   ///   Helper to test for expression equivalence
   ///
-  /// - Parameter i: the numberof variable bindings that have been crossed during the current traversal
-  /// - Parameter ns1: namespace that maps names to the depth at which they were bound for e1
-  /// - Parameter e1: expression to test for equality
-  /// - Parameter ns2: namespace that maps names to the depth at which they were bound for e2
-  /// - Parameter e2: expression to test for equality
+  /// - Parameters:
+  ///   - i: the numberof variable bindings that have been crossed during the current traversal
+  ///   - ns1: namespace that maps names to the depth at which they were bound for e1
+  ///   - e1: expression to test for equality
+  ///   - ns2: namespace that maps names to the depth at which they were bound for e2
+  ///   - e2: expression to test for equality
   /// - Returns: True, if equivalent. False if not.
   func αEquivHelper(i: Int, ns1: [(Name, Int)], e1: Expr, ns2: [(Name, Int)], e2: Expr) -> Bool {
     switch (e1, e2) {
@@ -192,12 +193,20 @@ extension Env {
   }
 }
 
-public enum Message: Error, CustomStringConvertible {
+public indirect enum Message: Error, CustomStringConvertible {
+  case cannotSynthesize(Expr)
+  case incorrectType(Name)
+  case notSameType(Expr, Expr)
   case unboundVariable(Name)
+  case unexpected(Message, Expr)
 
   public var description: String {
     switch self {
+    case .cannotSynthesize(let expr): "Unable to synthesize a type for \(expr)"
+    case .incorrectType(let name): "Not a \(name) type"
+    case .notSameType(let expr1, let expr2): "\(expr1) is not the same type as \(expr2)"
     case .unboundVariable(let name): "Unbound variable: \(name)"
+    case .unexpected(let message, let expr): "\(message): \(expr)"
     }
   }
 }
@@ -222,8 +231,8 @@ public indirect enum Value {
   case vu
   case vneutral(Type, Neutral)
 
-  func indNatStepType(_ mot: Value) -> Value {
-    return Env([("mot", mot)]).eval(
+  func indNatStepType() -> Value {
+    return Env([("mot", self)]).eval(
       .pi(
         "n-1", .nat,
         .pi(
@@ -276,7 +285,7 @@ public indirect enum Value {
           neu,
           Normal(type: .vpi(.vnat, Closure(env: Env(), name: "k", body: .u)), value: mot),
           Normal(type: mot.doApply(arg: .vzero), value: base),
-          Normal(type: indNatStepType(mot), value: step)))
+          Normal(type: mot.indNatStepType(), value: step)))
     default: fatalError("Internal error: Not expecting \(self) here")
     }
   }
@@ -431,6 +440,216 @@ extension Ctx {
     case (_, .vneutral(_, let neu)): return readBack(neutral: neu)
     default: fatalError("Internal error, not expecting \(type) and \(value) here.")
     }
+  }
+
+  public func synth(expr: Expr) -> Result<Type, Message> {
+    switch expr {
+    case .variable(let x): return lookupType(name: x)
+    case .pi(let x, let a, let b):
+      return check(expr: a, type: .vu)
+        .flatMap { extend(name: x, type: Env(ctx: self).eval(a)).check(expr: b, type: .vu) }
+        .map { .vu }
+    case .application(let rator, let rand):
+      return synth(expr: rator)
+        .flatMap { funTy in
+          isPi(funTy)
+            .flatMap { (a, b) in
+              check(expr: rand, type: a)
+                .map { b.eval(value: Env(ctx: self).eval(rand)) }
+            }
+        }
+    case .sigma(let x, let a, let b):
+      return check(expr: a, type: .vu)
+        .flatMap {
+          extend(name: x, type: Env(ctx: self).eval(a))
+            .check(expr: b, type: .vu)
+            .map { .vu }
+        }
+    case .car(let e):
+      return synth(expr: e)
+        .flatMap { t in
+          isSigma(t).map { (aT, _) in aT }
+        }
+    case .cdr(let e):
+      return synth(expr: e)
+        .flatMap { t in
+          isSigma(t)
+            .map { (aT, dT) in
+              dT.eval(value: Env(ctx: self).eval(e).doCar())
+            }
+        }
+    case .nat:
+      return .success(.vu)
+    case .indnat(let tgt, let mot, let base, let step):
+      return synth(expr: tgt)
+        .flatMap { t in
+          isNat(t)
+            .flatMap {
+              let tgtV = Env(ctx: self).eval(tgt)
+              let motV = Env(ctx: self).eval(mot)
+              return check(expr: base, type: motV.doApply(arg: .vzero))
+                .flatMap {
+                  check(expr: step, type: motV.indNatStepType())
+                    .map { motV.doApply(arg: tgtV) }
+                }
+            }
+        }
+    case .equal(let type, let from, let to):
+      return check(expr: type, type: .vu)
+        .flatMap {
+          let tyV = Env(ctx: self).eval(type)
+          return check(expr: from, type: tyV)
+            .flatMap {
+              check(expr: to, type: tyV)
+                .map { .vu }
+            }
+        }
+    case .replace(let tgt, let mot, let base):
+      return synth(expr: tgt)
+        .flatMap { t in
+          isEqual(t)
+            .flatMap { (ty, from, to) in
+              let motTy = Env([("ty", ty)]).eval(.pi("x", .variable("ty"), .u))
+              return check(expr: mot, type: motTy)
+                .flatMap {
+                  let motV = Env(ctx: self).eval(mot)
+                  return check(expr: base, type: motV.doApply(arg: from))
+                    .map { motV.doApply(arg: to) }
+                }
+            }
+        }
+    case .trivial:
+      return .success(.vu)
+    case .absurd:
+      return .success(.vu)
+    case .indabsurd(let tgt, let mot):
+      return synth(expr: tgt)
+        .flatMap { t in
+          isAbsurd(t)
+            .flatMap {
+              check(expr: mot, type: .vu)
+                .map { Env(ctx: self).eval(mot) }
+            }
+        }
+    case .atom:
+      return .success(.vu)
+    case .u:
+      return .success(.vu)
+    case .the(let ty, let exp):
+      return check(expr: ty, type: .vu)
+        .flatMap {
+          let tyV = Env(ctx: self).eval(ty)
+          return check(expr: exp, type: tyV)
+            .map { tyV }
+        }
+    default:
+      return .failure(.cannotSynthesize(expr))
+    }
+  }
+
+  public func check(expr: Expr, type: Type) -> Result<(), Message> {
+    switch expr {
+    case .lambda(let x, let body):
+      return isPi(type)
+        .flatMap { (a, b) in
+          let xV = b.eval(value: .vneutral(a, .nvar(x)))
+          return extend(name: x, type: a)
+            .check(expr: body, type: xV)
+        }
+    case .cons(let a, let d):
+      return isSigma(type)
+        .flatMap { (aT, dT) in
+          check(expr: a, type: aT)
+            .flatMap {
+              let aV = Env(ctx: self).eval(a)
+              return check(expr: d, type: dT.eval(value: aV))
+            }
+        }
+    case .zero:
+      return isNat(type)
+    case .add1(let n):
+      return isNat(type)
+        .flatMap {
+          check(expr: n, type: .vnat)
+        }
+    case .same:
+      return isEqual(type)
+        .flatMap { (t, from, to) in
+          convert(type: t, v1: from, v2: to)
+        }
+    case .sole:
+      return isTrivial(type)
+    case .tick:
+      return isAtom(type)
+    default:
+      return synth(expr: expr)
+        .flatMap { t in
+          convert(type: .vu, v1: t, v2: type)
+        }
+    }
+  }
+
+  func convert(type: Type, v1: Value, v2: Value) -> Result<(), Message> {
+    let e1 = readBack(type: type, value: v1)
+    let e2 = readBack(type: type, value: v2)
+    if e1.αEquiv(e2) {
+      return .success(())
+    }
+    return .failure(.notSameType(e1, e2))
+  }
+
+  func isPi(_ value: Value) -> Result<(Type, Closure), Message> {
+    return switch value {
+    case .vpi(let a, let b): .success((a, b))
+    default: .failure(unexpected(msg: .incorrectType(".pi"), t: value))
+    }
+  }
+
+  func isSigma(_ value: Value) -> Result<(Type, Closure), Message> {
+    return switch value {
+    case .vsigma(let a, let b): .success((a, b))
+    default: .failure(unexpected(msg: .incorrectType(".vsigma"), t: value))
+    }
+  }
+
+  func isNat(_ value: Value) -> Result<(), Message> {
+    return switch value {
+    case .vnat: .success(())
+    default: .failure(unexpected(msg: .incorrectType(".vnat"), t: value))
+    }
+  }
+
+  func isEqual(_ value: Value) -> Result<(Type, Value, Value), Message> {
+    return switch value {
+    case .veq(let type, let from, let to): .success((type, from, to))
+    default: .failure(unexpected(msg: .incorrectType(".veq"), t: value))
+    }
+  }
+
+  func isAbsurd(_ value: Value) -> Result<(), Message> {
+    return switch value {
+    case .vabsurd: .success(())
+    default: .failure(unexpected(msg: .incorrectType(".vabsurd"), t: value))
+    }
+  }
+
+  func isTrivial(_ value: Value) -> Result<(), Message> {
+    return switch value {
+    case .vtrivial: .success(())
+    default: .failure(unexpected(msg: .incorrectType(".vtrivial"), t: value))
+    }
+  }
+
+  func isAtom(_ value: Value) -> Result<(), Message> {
+    return switch value {
+    case .vatom: .success(())
+    default: .failure(unexpected(msg: .incorrectType(".vatom"), t: value))
+    }
+  }
+
+  func unexpected(msg: Message, t: Value) -> Message {
+    let e = readBack(type: .vu, value: t)
+    return .unexpected(msg, e)
   }
 
   public var names: [Name] {

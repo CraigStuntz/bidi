@@ -170,8 +170,7 @@ extension Context {
     switch (expr, type) {
     case (.lambda(let x, let body), .tarr(let arg, let ret)):
       return
-        self
-        .extend(name: x, value: arg)
+        extend(name: x, value: arg)
         .check(expr: body, type: ret)
     case (.lambda, .tnat):
       return .failure(.lambdaRequiresArrow(type))
@@ -180,7 +179,7 @@ extension Context {
     case (.zero, .tarr):
       return .failure(.incorrectType("Zero", .tnat, type))
     case (.add1(let n), .tnat):
-      return self.check(expr: n, type: .tnat)
+      return check(expr: n, type: .tnat)
     case (.add1, .tarr):
       return .failure(.incorrectType("Add1", .tnat, type))
     default:
