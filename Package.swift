@@ -24,9 +24,9 @@ let package = Package(
             path: "Sources/Simply"
         ),
         .target(
-            name: "Pie",
+            name: "Tartlet",
             dependencies: [ "Shared" ],
-            path: "Sources/Pie"
+            path: "Sources/Tartlet"
         ),
         .executableTarget(
             name: "Executable",
@@ -41,8 +41,8 @@ let package = Package(
                 .product(name: "CustomDump", package: "swift-custom-dump")
             ]),
         .testTarget(
-            name: "PieTests",
-            dependencies: [ "Pie" ]
+            name: "TartletTests",
+            dependencies: [ "Tartlet" ]
         ),
         .testTarget(
             name: "UntypedTests",

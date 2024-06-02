@@ -1,6 +1,6 @@
 import XCTest
 
-@testable import Pie
+@testable import Tartlet
 
 class ExprTests: XCTestCase {
   func testNotEuqiv() throws {

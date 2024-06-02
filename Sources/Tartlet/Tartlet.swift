@@ -194,6 +194,7 @@ extension Env {
 }
 
 public indirect enum Message: Error, CustomStringConvertible {
+  case alreadyDefined(Name)
   case cannotSynthesize(Expr)
   case incorrectType(Name)
   case notSameType(Expr, Expr)
@@ -202,6 +203,7 @@ public indirect enum Message: Error, CustomStringConvertible {
 
   public var description: String {
     switch self {
+    case .alreadyDefined(let name): "The name \(name) is already defined."
     case .cannotSynthesize(let expr): "Unable to synthesize a type for \(expr)"
     case .incorrectType(let name): "Not a \(name) type"
     case .notSameType(let expr1, let expr2): "\(expr1) is not the same type as \(expr2)"
@@ -655,4 +657,30 @@ extension Ctx {
   public var names: [Name] {
     return map { (name, _) in name }
   }
+
+  public func toplevel(name: Name, expr: Expr) -> Result<Ctx, Message> {
+    switch lookupType(name: name) {
+    case .success: return .failure(.alreadyDefined(name))
+    case .failure:
+      return synth(expr: expr)
+        .map { t in
+          let v = Env(ctx: self).eval(expr)
+          return define(name: name, type: t, value: v)
+        }
+    }
+  }
+
+  public func toplevel(example: Expr) -> Result<[Output], Message> {
+    return synth(expr: example)
+      .map { t in
+        let v = Env(ctx: self).eval(example)
+        let e2 = readBack(type: t, value: v)
+        let t2 = readBack(type: .vu, value: t)
+        return [.exampleOutput(.the(t2, e2))]
+      }
+  }
+}
+
+public enum Output {
+  case exampleOutput(Expr)
 }
