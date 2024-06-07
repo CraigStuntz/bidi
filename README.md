@@ -16,7 +16,17 @@ the MIT license.
 
 ## Running the code
 
-Install dependencies (you only need to do this once). You will need
+### Install dependencies 
+
+(You only need to do this once.)
+
+If you don't already have the Swift command-line tools, install them via:
+
+```bash
+$ xcode-select --install
+```
+
+You will need
 [swift-format](https://github.com/apple/swift-format). I installed this via
 Homebrew, as follows, but any method of installation should work so long as it
 ends up on your `PATH`
@@ -25,7 +35,7 @@ ends up on your `PATH`
 $ brew install swift-format
 ```
 
-Run the tests:
+### Run the tests
 
 ```bash
 $ make test
