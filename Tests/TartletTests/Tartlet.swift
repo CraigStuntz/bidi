@@ -23,14 +23,37 @@ class CtxTests: XCTestCase {
     .toplevel(expressions: [
       (
         "two",
+        // (the Nat (add1 (add1 (zero))))
         .the(.nat, .add1(.add1(.zero)))
       ),
       (
         "three",
+        // (the Nat (add1 (add1 (add1 (zero)))))
         .the(.nat, .add1(.add1(.add1(.zero))))
       ),
       (
         "nat=consequence",
+        // (the (Pi ((j Nat))
+        //     (Pi ((k Nat))
+        //       U))
+        //   (lambda (j)
+        //     (lambda (k)
+        //       (ind-Nat j
+        //               (lambda (_) U)
+        //               (ind-Nat k
+        //                         (lambda (_) U)
+        //                         Trivial
+        //                         (lambda (_)
+        //                           (lambda (_)
+        //                             Absurd)))
+        //               (lambda (j-1)
+        //                 (lambda (_)
+        //                   (ind-Nat k
+        //                             (lambda (_) U)
+        //                             Absurd
+        //                             (lambda (k-1)
+        //                               (lambda (_)
+        //                                 (= Nat j-1 k-1))))))))))
         .the(
           .pi("j", .nat, .pi("k", .nat, .u)),
           .lambda(
@@ -65,6 +88,16 @@ class CtxTests: XCTestCase {
       ),
       (
         "nat=consequence-refl",
+        // (the (Pi ((n Nat))
+        //     ((nat=consequence n) n))
+        //   (lambda (n)
+        //     (ind-Nat n
+        //             (lambda (k)
+        //               ((nat=consequence k) k))
+        //             sole
+        //             (lambda (n-1)
+        //               (lambda (_)
+        //                 same)))))
         .the(
           .pi(
             "n",
@@ -90,6 +123,17 @@ class CtxTests: XCTestCase {
       //   ; The consequences hold for all equal Nats
       (
         "there-are-consequences",
+        // (the (Pi ((j Nat))
+        //     (Pi ((k Nat))
+        //       (Pi ((j=k (= Nat j k)))
+        //         ((nat=consequence j) k))))
+        //   (lambda (j)
+        //     (lambda (k)
+        //       (lambda (j=k)
+        //         (replace j=k
+        //                 (lambda (n)
+        //                   ((nat=consequence j) n))
+        //                 (nat=consequence-refl j))))))
         .the(
           .pi(
             "j", .nat,
