@@ -31,9 +31,9 @@
                 "swift"
             ],
             "args": [],
-            "cwd": "${workspaceFolder:Bidi}",
+            "cwd": "${workspaceFolder:bidi}",
             "name": "Debug Executable",
-            "program": "${workspaceFolder:Bidi}/.build/debug/Executable",
+            "program": "${workspaceFolder:bidi}/.build/debug/Executable",
             "preLaunchTask": "swift: Build Debug Executable"
         },
         {
@@ -43,9 +43,9 @@
                 "swift"
             ],
             "args": [],
-            "cwd": "${workspaceFolder:Bidi}",
+            "cwd": "${workspaceFolder:bidi}",
             "name": "Release Executable",
-            "program": "${workspaceFolder:Bidi}/.build/release/Executable",
+            "program": "${workspaceFolder:bidi}/.build/release/Executable",
             "preLaunchTask": "swift: Build Release Executable"
         }
     ]

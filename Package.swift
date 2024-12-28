@@ -42,7 +42,10 @@ let package = Package(
             ]),
         .testTarget(
             name: "TartletTests",
-            dependencies: [ "Tartlet" ]
+            dependencies: [ 
+                "Tartlet",
+                .product(name: "CustomDump", package: "swift-custom-dump")
+            ]
         ),
         .testTarget(
             name: "UntypedTests",
