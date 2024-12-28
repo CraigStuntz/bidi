@@ -1,6 +1,6 @@
 import Shared
 
-public indirect enum Expr: Equatable {
+public indirect enum Expr: Equatable, Sendable {
   case variable(Name)
   /// Associated type names are x, A, and B as in `(Π ((x A)) B)`
   case pi(Name, Expr, Expr)

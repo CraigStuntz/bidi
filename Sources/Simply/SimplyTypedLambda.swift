@@ -29,7 +29,7 @@ public enum Message: Error, CustomStringConvertible {
   }
 }
 
-public indirect enum Expr: Equatable {
+public indirect enum Expr: Equatable, Sendable {
   case variable(Name)
   /// Constructor of function type
   case lambda(Name, Expr)
@@ -95,7 +95,7 @@ extension Defs {
   }
 }
 
-public indirect enum Type: Equatable {
+public indirect enum Type: Equatable, Sendable {
   /// The type of natural numbers
   case tnat
   /// Arrow type (function), Associated values are arg and ret (the type of the

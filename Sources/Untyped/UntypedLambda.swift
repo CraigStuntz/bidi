@@ -54,7 +54,7 @@ public enum Value {
   }
 }
 
-public indirect enum Expr: Equatable {
+public indirect enum Expr: Equatable, Sendable {
   case variable(Name)
   case lambda(Name, Expr)
   case application(Expr, Expr)
