@@ -1,6 +1,6 @@
 import CustomDump
 import Shared
-import XCTest
+import Testing
 
 @testable import Simply
 
@@ -30,8 +30,8 @@ let testDefs: [(name: Name, expr: Expr)] = [
   ),
 ]
 
-class SimplyTypedTests: XCTestCase {
-  func testPlus() throws {
+struct SimplyTypedTests {
+  @Test func plus() throws {
     let actual = Program(
       namedExprs: testDefs,
       body: .variable("+")
@@ -39,9 +39,10 @@ class SimplyTypedTests: XCTestCase {
 
     customDump(actual)
     guard case .success(let expr) = actual else {
-      return XCTFail("Expected success, got \(actual)")
+      Issue.record("Expected success, got \(actual)")
+      return
     }
-    XCTAssertEqual(
+    #expect(
       .lambda(
         "n",
         .lambda(
@@ -53,11 +54,10 @@ class SimplyTypedTests: XCTestCase {
               "pred",
               .lambda(
                 "almostSum",
-                .add1(.variable("almostSum"))))))),
-      expr)
+                .add1(.variable("almostSum"))))))) == expr)
   }
 
-  func testPlus3() throws {
+  @Test func plus3() throws {
     let actual = Program(
       namedExprs: testDefs,
       body: .application(.variable("+"), .variable("three"))
@@ -65,14 +65,15 @@ class SimplyTypedTests: XCTestCase {
 
     customDump(actual)
     guard case .success(let expr) = actual else {
-      return XCTFail("Expected success, got \(actual)")
+      Issue.record("Expected success, got \(actual)")
+      return
     }
-    XCTAssertEqual(
-      .lambda("k", .add1(.add1(.add1(.variable("k"))))), expr
+    #expect(
+      .lambda("k", .add1(.add1(.add1(.variable("k"))))) == expr
     )
   }
 
-  func testAdd3Plus2() throws {
+  @Test func add3Plus2() throws {
     let actual = Program(
       namedExprs: testDefs,
       body: .application(.application(.variable("+"), .variable("three")), .variable("two"))
@@ -80,10 +81,11 @@ class SimplyTypedTests: XCTestCase {
 
     customDump(actual)
     guard case .success(let expr) = actual else {
-      return XCTFail("Expected success, got \(actual)")
+      Issue.record("Expected success, got \(actual)")
+      return
     }
-    XCTAssertEqual(
-      .add1(.add1(.add1(.add1(.add1(.zero))))), expr
+    #expect(
+      .add1(.add1(.add1(.add1(.add1(.zero))))) == expr
     )
   }
 }

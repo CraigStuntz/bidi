@@ -1,9 +1,9 @@
-import XCTest
+import Testing
 
 @testable import Shared
 
-class EnvTests: XCTestCase {
-  func testEnvIsImmutable() throws {
+struct EnvTests {
+  @Test func envIsImmutable() throws {
     let env = [
       "foo": "bar"
     ]
@@ -11,9 +11,9 @@ class EnvTests: XCTestCase {
       name: "baz", value: "qux"
     )
 
-    XCTAssertNotNil(env["foo"])
-    XCTAssertNil(env["baz"])
-    XCTAssertNotNil(newEnv["foo"])
-    XCTAssertNotNil(newEnv["foo"])
+    #expect(env["foo"] != nil)
+    #expect(env["baz"] == nil)
+    #expect(newEnv["foo"] != nil)
+    #expect(newEnv["foo"] != nil)
   }
 }

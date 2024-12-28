@@ -1,5 +1,5 @@
 import CustomDump
-import XCTest
+import Testing
 
 @testable import Untyped
 
@@ -46,8 +46,8 @@ func toChurch(_ n: Int) -> Expr {
   return .application(.variable("add1"), toChurch(n - 1))
 }
 
-class UntypedLambdaTests: XCTestCase {
-  func test2plus3() throws {
+struct UntypedLambdaTests {
+  @Test func twoPplus3() throws {
     let actual = Program(
       defs: churchDefs,
       body: .application(.application(.variable("+"), toChurch(2)), toChurch(3))
@@ -55,9 +55,10 @@ class UntypedLambdaTests: XCTestCase {
 
     customDump(actual)
     guard case .success(let expr) = actual else {
-      return XCTFail("Expected success, got \(actual)")
+      Issue.record("Expected success, got \(actual)")
+      return
     }
-    XCTAssertEqual(
+    #expect(
       .lambda(
         "f",
         .lambda(
@@ -72,22 +73,22 @@ class UntypedLambdaTests: XCTestCase {
                   .variable("f"),
                   .application(
                     .variable("f"),
-                    .variable("x")))))))),
-      expr)
+                    .variable("x")))))))) == expr)
   }
 
-  func test2plus3WithBug() throws {
+  @Test func twoPlus3WithBug() throws {
     let result = Program(
       defs: [],
       body: .application(.application(.variable("+"), toChurch(2)), toChurch(3))
     ).run()
     switch result {
     case .success:
-      XCTFail()
+      Issue.record()
+      return
     case .failure(let message):
       switch message {
       case .notFound(let name):
-        XCTAssertEqual("+", name)
+        #expect("+" == name)
       }
     }
   }

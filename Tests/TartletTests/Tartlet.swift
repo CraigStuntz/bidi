@@ -1,21 +1,21 @@
 import CustomDump
-import XCTest
+import Testing
 
 @testable import Tartlet
 
-class ExprTests: XCTestCase {
-  func testNotEuqiv() throws {
+struct ExprTests {
+  @Test func notEuqiv() throws {
     let actual = Expr.zero.αEquiv(.absurd)
-    XCTAssertFalse(actual)
+    #expect(!actual)
   }
 
-  func testSimpleEuqiv() throws {
+  @Test func simpleEuqiv() throws {
     let actual = Expr.zero.αEquiv(.zero)
-    XCTAssertTrue(actual)
+    #expect(actual)
   }
 }
 
-class CtxTests: XCTestCase {
+struct CtxTests {
   // These tests are taken from the Racket version of the tutorial; they don't
   // appear in the Haskell version
   let testCtx =
@@ -163,7 +163,7 @@ class CtxTests: XCTestCase {
   func evaluateInTestCtx(example: Expr) -> TypeAndNormalForm {
     let output = testCtx.toplevel(example: example)
     guard case .success(let result) = output else {
-      XCTFail("Evaluation failed: \(output)")
+      Issue.record("Evaluation failed: \(output)")
       fatalError("Evaluation failed: \(output)")
     }
     return toTypeAndNormalForm(result)
@@ -185,7 +185,7 @@ class CtxTests: XCTestCase {
     }
   }
 
-  func testNatConsequencesReflZero() {
+  @Test func natConsequencesReflZero() {
     // (nat=consequence-refl zero)
     let given = Expr.application(.variable("nat=consequence-refl"), .zero)
 
@@ -193,14 +193,14 @@ class CtxTests: XCTestCase {
 
     let expectedType = Expr.trivial
     let expectedNormalForm = Expr.sole
-    XCTAssertEqual(expectedType, actual.type)
-    XCTAssertEqual(expectedNormalForm, actual.normalForm)
+    #expect(expectedType == actual.type)
+    #expect(expectedNormalForm == actual.normalForm)
 
     print("(nat=consequence-refl zero)")
     customDump(actual)
   }
 
-  func testNatConsequencesReflTwo() {
+  @Test func natConsequencesReflTwo() {
     //   (nat=consequence-refl (add1 (add1 zero)))
     let given = Expr.application(.variable("nat=consequence-refl"), .add1(.add1(.zero)))
 
@@ -212,14 +212,14 @@ class CtxTests: XCTestCase {
       .add1(.zero)
     )
     let expectedNormalForm = Expr.same
-    XCTAssertEqual(expectedType, actual.type)
-    XCTAssertEqual(expectedNormalForm, actual.normalForm)
+    #expect(expectedType == actual.type)
+    #expect(expectedNormalForm == actual.normalForm)
 
     print("(nat=consequence-refl (add1 (add1 zero)))")
     customDump(actual)
   }
 
-  func testThereAreConsequencesZeroZero() {
+  @Test func thereAreConsequencesZeroZero() {
     //   ((there-are-consequences zero) zero)
     let given = Expr.application(.application(.variable("there-are-consequences"), .zero), .zero)
 
@@ -238,14 +238,14 @@ class CtxTests: XCTestCase {
       "j=k",
       .sole
     )
-    XCTAssertEqual(expectedType, actual.type)
-    XCTAssertEqual(expectedNormalForm, actual.normalForm)
+    #expect(expectedType == actual.type)
+    #expect(expectedNormalForm == actual.normalForm)
 
     print("((there-are-consequences zero) zero)")
     customDump(actual)
   }
 
-  func testThereAreConsequencesZeroZeroSame() {
+  @Test func thereAreConsequencesZeroZeroSame() {
     //   (((there-are-consequences zero) zero) sole)
     let given = Expr.application(
       .application(.application(.variable("there-are-consequences"), .zero), .zero), .same)
@@ -254,14 +254,14 @@ class CtxTests: XCTestCase {
 
     let expectedType = Expr.trivial
     let expectedNormalForm = Expr.sole
-    XCTAssertEqual(expectedType, actual.type)
-    XCTAssertEqual(expectedNormalForm, actual.normalForm)
+    #expect(expectedType == actual.type)
+    #expect(expectedNormalForm == actual.normalForm)
 
     print("(((there-are-consequences zero) zero) sole)")
     customDump(actual)
   }
 
-  func testThereAreConsequencesAdd1ZeroAdd1Zero() {
+  @Test func thereAreConsequencesAdd1ZeroAdd1Zero() {
     //   ((there-are-consequences (add1 zero)) (add1 zero))
     let given = Expr.application(
       .application(.variable("there-are-consequences"), .add1(.zero)), .add1(.zero))
@@ -303,14 +303,14 @@ class CtxTests: XCTestCase {
                   .zero,
                   .variable("n-1")))))),
         .same))
-    XCTAssertEqual(expectedType, actual.type)
-    XCTAssertEqual(expectedNormalForm, actual.normalForm)
+    #expect(expectedType == actual.type)
+    #expect(expectedNormalForm == actual.normalForm)
 
     print("((there-are-consequences (add1 zero)) (add1 zero))")
     customDump(actual)
   }
 
-  func testThereAreConsequencesAdd1ZeroAdd1ZeroSame() {
+  @Test func thereAreConsequencesAdd1ZeroAdd1ZeroSame() {
     //   (((there-are-consequences (add1 zero)) (add1 zero)) same)
     let given = Expr.application(
       .application(.application(.variable("there-are-consequences"), .add1(.zero)), .add1(.zero)),
@@ -324,14 +324,14 @@ class CtxTests: XCTestCase {
       .zero
     )
     let expectedNormalForm = Expr.same
-    XCTAssertEqual(expectedType, actual.type)
-    XCTAssertEqual(expectedNormalForm, actual.normalForm)
+    #expect(expectedType == actual.type)
+    #expect(expectedNormalForm == actual.normalForm)
 
     print("(((there-are-consequences (add1 zero)) (add1 zero)) same)")
     customDump(actual)
   }
 
-  func testThereAreConsequencesZeroAdd1Zero() {
+  @Test func thereAreConsequencesZeroAdd1Zero() {
     //   ((there-are-consequences zero) (add1 zero))
     let given = Expr.application(
       .application(.variable("there-are-consequences"), .zero), .add1(.zero))
@@ -368,14 +368,14 @@ class CtxTests: XCTestCase {
                   "almost",
                   .absurd)))),
           .sole)))
-    XCTAssertEqual(expectedType, actual.type)
-    XCTAssertEqual(expectedNormalForm, actual.normalForm)
+    #expect(expectedType == actual.type)
+    #expect(expectedNormalForm == actual.normalForm)
 
     print("((there-are-consequences zero) (add1 zero))")
     customDump(actual)
   }
 
-  func testThereAreConsequencesAdd1ZeroZero() {
+  @Test func thereAreConsequencesAdd1ZeroZero() {
     //   ((there-are-consequences (add1 zero)) zero))
     let given = Expr.application(
       .application(.variable("there-are-consequences"), .add1(.zero)), .zero)
@@ -423,8 +423,8 @@ class CtxTests: XCTestCase {
         )
       )
     )
-    XCTAssertEqual(expectedType, actual.type)
-    XCTAssertEqual(expectedNormalForm, actual.normalForm)
+    #expect(expectedType == actual.type)
+    #expect(expectedNormalForm == actual.normalForm)
 
     print("((there-are-consequences (add1 zero)) zero))")
     customDump(actual)
